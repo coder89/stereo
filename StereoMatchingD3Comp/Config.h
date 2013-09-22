@@ -1,0 +1,1 @@
+#define MAX_DISPARITY 20
