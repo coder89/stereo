@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "Config.h"
 #include <wrl.h>
 #include <wrl/client.h>
 #include <d3d11_1.h>

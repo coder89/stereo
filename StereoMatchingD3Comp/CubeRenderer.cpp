@@ -1,5 +1,7 @@
 ﻿#include "pch.h"
+#include "Config.h"
 #include "CubeRenderer.h"
+#include "DDSTextureLoader.h"
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
@@ -7,11 +9,11 @@ using namespace Windows::Foundation;
 using namespace Windows::ApplicationModel;
 using namespace Windows::UI::Core;
 
-#include "DDSTextureLoader.h"
+ConstantParameters * ConstantParametersBuffer = new ConstantParameters(9, 0.0001f, 0.9f, 9, 0.1f, 0.028f, 0.008f);
 
 CubeRenderer::CubeRenderer() :
-	m_loadingComplete(false),
-	m_indexCount(0)
+	m_indexCount(0),
+	m_loadingComplete(false)
 {
 }
 
@@ -19,7 +21,9 @@ void CubeRenderer::CreateDeviceResources()
 {
 	Direct3DBase::CreateDeviceResources();
 
-	m_costVolumeRenderer = new CostVolumeRenderer(m_d3dDevice.Get());
+	m_costVolumeRenderer = new CostVolumeRenderer(m_d3dDevice.Get(), Size(900, 750));
+
+	auto initCVRenderer = m_costVolumeRenderer->Initialize();
 
 	auto loadVSTask = DX::ReadDataAsync("SimpleVertexShader.cso");
 	auto loadPSTask = DX::ReadDataAsync("ToScreenPixelShader.cso");
@@ -97,28 +101,6 @@ void CubeRenderer::CreateDeviceResources()
 		DX::ThrowIfFailed(
 			textureView.As(&m_texture1View)
 			);
-		// create the sampler
-		D3D11_SAMPLER_DESC samplerDesc;
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.MipLODBias = 0;
-		samplerDesc.MaxAnisotropy = 0;
-		samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-		samplerDesc.BorderColor[0] = 0;
-		samplerDesc.BorderColor[1] = 0;
-		samplerDesc.BorderColor[2] = 0;
-		samplerDesc.BorderColor[3] = 0;
-		samplerDesc.MinLOD = 0;
-		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-		DX::ThrowIfFailed(
-			m_d3dDevice->CreateSamplerState(
-			&samplerDesc,
-			&m_sampler
-			)
-			);
 	});
 
 	auto createTX2Task = loadTX2Task.then([this](Platform::Array<byte>^ fileData) {
@@ -142,9 +124,18 @@ void CubeRenderer::CreateDeviceResources()
 		DX::ThrowIfFailed(
 			textureView.As(&m_texture2View)
 			);
+	});
+	
+	auto setInputImages = (createTX1Task && createTX2Task && initCVRenderer).then([this] () {
+
+		ConstantParametersBuffer->dx = 1.0f / m_renderTargetSize.Width;
+		ConstantParametersBuffer->dy = 1.0f / m_renderTargetSize.Height;
+
+		m_costVolumeRenderer->SetStereoTexture(m_texture1View.Get(), m_texture2View.Get());
+		
 		// create the sampler
 		D3D11_SAMPLER_DESC samplerDesc;
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -165,78 +156,22 @@ void CubeRenderer::CreateDeviceResources()
 			)
 			);
 	});
-	
-	auto createSampler = (createTX1Task && createTX2Task).then([this] () {
 
-		//// create the sampler
-		//D3D11_SAMPLER_DESC samplerDesc;
-		//samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		//samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		//samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		//samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		//samplerDesc.MipLODBias = 0;
-		//samplerDesc.MaxAnisotropy = 0;
-		//samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-		//samplerDesc.BorderColor[0] = 0;
-		//samplerDesc.BorderColor[1] = 0;
-		//samplerDesc.BorderColor[2] = 0;
-		//samplerDesc.BorderColor[3] = 0;
-		//samplerDesc.MinLOD = 0;
-		//samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-		//DX::ThrowIfFailed(
-		//	m_d3dDevice->CreateSamplerState(
-		//	&samplerDesc,
-		//	&m_sampler
-		//	)
-		//	);
-	});
-
-	auto createTargetTexture = (createVSTask && createPSTask && createSampler).then([this] () {
-
-		D3D11_TEXTURE2D_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		m_texture1.Get()->GetDesc(&desc);
-
-		m_costVolumeRenderer->SetLeftTexture(m_texture1.Get(), m_texture1View.Get());
-		m_costVolumeRenderer->SetRightTexture(m_texture2.Get(), m_texture2View.Get());
-		m_costVolumeRenderer->Initialize(desc.Width,  desc.Height);
-
-	});
-	
-	auto createScene = (createTargetTexture).then([this] () {
+	auto createScene = (createVSTask && createPSTask && setInputImages).then([this] () {
 		
-		float texW = m_costVolumeRenderer->GetWidth();
-		float texH = m_costVolumeRenderer->GetHeight();
-
-		float x = texW / m_renderTargetSize.Width;
-		float y = texH / m_renderTargetSize.Height;
-
-		if (x > 1.0f)
+		VertexPositionTexel surfaceVertices[] =
 		{
-			y *= (1.0f / x);
-			x = 1.0f;
-		}
-
-		if (y > 1.0f)
-		{
-			x *= (1.0f / y);
-			y = 1.0f;
-		}
-
-		VertexPositionColor cubeVertices[] =
-		{
-			{ XMFLOAT3(-x,  y, 0.5f), XMFLOAT2(0.0f, 0.0f) }, // +Z (front face)
-			{ XMFLOAT3( x,  y, 0.5f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT3( x, -y, 0.5f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT3(-x, -y, 0.5f), XMFLOAT2(0.0f, 1.0f) },
+			{ XMFLOAT3(-1.0,  1.0, 0.5f), XMFLOAT2(0.0f, 0.0f) },
+			{ XMFLOAT3( 1.0,  1.0, 0.5f), XMFLOAT2(1.0f, 0.0f) },
+			{ XMFLOAT3( 1.0, -1.0, 0.5f), XMFLOAT2(1.0f, 1.0f) },
+			{ XMFLOAT3(-1.0, -1.0, 0.5f), XMFLOAT2(0.0f, 1.0f) },
 		};
 
 		D3D11_SUBRESOURCE_DATA vertexBufferData = {0};
-		vertexBufferData.pSysMem = cubeVertices;
+		vertexBufferData.pSysMem = surfaceVertices;
 		vertexBufferData.SysMemPitch = 0;
 		vertexBufferData.SysMemSlicePitch = 0;
-		CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
+		CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(surfaceVertices), D3D11_BIND_VERTEX_BUFFER);
 		DX::ThrowIfFailed(
 			m_d3dDevice->CreateBuffer(
 			&vertexBufferDesc,
@@ -245,19 +180,19 @@ void CubeRenderer::CreateDeviceResources()
 			)
 			);
 
-		unsigned short cubeIndices[] = 
+		unsigned short surfaceIndices[] = 
 		{
 			0, 1, 2,
 			0, 2, 3
 		};
 
-		m_indexCount = ARRAYSIZE(cubeIndices);
+		m_indexCount = ARRAYSIZE(surfaceIndices);
 
 		D3D11_SUBRESOURCE_DATA indexBufferData = {0};
-		indexBufferData.pSysMem = cubeIndices;
+		indexBufferData.pSysMem = surfaceIndices;
 		indexBufferData.SysMemPitch = 0;
 		indexBufferData.SysMemSlicePitch = 0;
-		CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER);
+		CD3D11_BUFFER_DESC indexBufferDesc(sizeof(surfaceIndices), D3D11_BIND_INDEX_BUFFER);
 		DX::ThrowIfFailed(
 			m_d3dDevice->CreateBuffer(
 			&indexBufferDesc,
@@ -320,14 +255,14 @@ void CubeRenderer::Update(float timeTotal, float timeDelta)
 void CubeRenderer::Render()
 {
 	// Only draw the cube once it is loaded (loading is asynchronous).
-	if (!m_loadingComplete || !m_costVolumeRenderer->IsInitialized())
+	if (!m_loadingComplete)
 	{
 		return;
 	}
 	
 	m_costVolumeRenderer->Render(m_d3dContext.Get());
-	
-	Render(m_costVolumeRenderer->GetShaderResourceView());
+
+	Render(m_costVolumeRenderer->GetResultView());
 }
 
 void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
@@ -338,7 +273,7 @@ void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
 	m_d3dContext->OMSetRenderTargets(
 		1,
 		m_renderTargetView.GetAddressOf(),
-		m_depthStencilView.Get()			// This increases performance!
+		0//m_depthStencilView.Get()			// This increases performance!
 		);
 	m_d3dContext->PSSetShaderResources(
 		0, 
@@ -353,12 +288,12 @@ void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
 			midnightBlue
 			);
 
-		m_d3dContext->ClearDepthStencilView(
-			m_depthStencilView.Get(),
-			D3D11_CLEAR_DEPTH,
-			1.0f,
-			0
-			);
+		//m_d3dContext->ClearDepthStencilView(
+		//	m_depthStencilView.Get(),
+		//	D3D11_CLEAR_DEPTH,
+		//	1.0f,
+		//	0
+		//	);
 
 		m_d3dContext->UpdateSubresource(
 			m_constantBuffer.Get(),
@@ -369,7 +304,7 @@ void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
 			0
 			);
 
-		UINT stride = sizeof(VertexPositionColor);
+		UINT stride = sizeof(VertexPositionTexel);
 		UINT offset = 0;
 		m_d3dContext->IASetVertexBuffers(
 			0,

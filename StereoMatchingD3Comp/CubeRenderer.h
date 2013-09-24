@@ -10,7 +10,7 @@ struct ModelViewProjectionConstantBuffer
 	DirectX::XMFLOAT4X4 projection;
 };
 
-struct VertexPositionColor
+struct VertexPositionTexel
 {
 	DirectX::XMFLOAT3 pos;
 	DirectX::XMFLOAT2 tex;

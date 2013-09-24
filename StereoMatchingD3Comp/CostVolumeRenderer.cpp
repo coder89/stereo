@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Config.h"
 #include "CostVolumeRenderer.h"
 
 using namespace DirectX;
@@ -7,32 +8,19 @@ using namespace Windows::Foundation;
 using namespace Windows::ApplicationModel;
 using namespace Windows::UI::Core;
 
-#include "DDSTextureLoader.h"
-
-CostVolumeRenderer::CostVolumeRenderer(ID3D11Device1 * device)
+CostVolumeRenderer::CostVolumeRenderer(ID3D11Device1 * device, Windows::Foundation::Size viewportSize) :
+	AbstractProcessingStage(device, viewportSize)
 {
-	m_loadingComplete = false;
-	m_d3dDevice = device;
 }
 
-void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
+void CostVolumeRenderer::_Initialize()
 {
-	m_width = width;
-	m_height = height;
-
-	m_viewport = CD3D11_VIEWPORT(
-		0.0f,
-		0.0f,
-		m_width,
-		m_height
-		);
-
 	auto loadVSTask = DX::ReadDataAsync("CostVolumeVertexShader.cso");
-	auto loadPSTask = DX::ReadDataAsync("BoxFilterPixelShaderH.cso");
+	auto loadPSTask = DX::ReadDataAsync("CostVolumePixelShader.cso");
 
 	auto createVSTask = loadVSTask.then([this](Platform::Array<byte>^ fileData) {
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreateVertexShader(
+			m_device->CreateVertexShader(
 			fileData->Data,
 			fileData->Length,
 			nullptr,
@@ -47,7 +35,7 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 		};
 
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreateInputLayout(
+			m_device->CreateInputLayout(
 			vertexDesc,
 			ARRAYSIZE(vertexDesc),
 			fileData->Data,
@@ -59,7 +47,7 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 
 	auto createPSTask = loadPSTask.then([this](Platform::Array<byte>^ fileData) {
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreatePixelShader(
+			m_device->CreatePixelShader(
 			fileData->Data,
 			fileData->Length,
 			nullptr,
@@ -67,9 +55,9 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 			)
 			);
 
-		CD3D11_BUFFER_DESC constantParametersBufferDesc(sizeof(ConstantParametersBuffer), D3D11_BIND_CONSTANT_BUFFER);
+		CD3D11_BUFFER_DESC constantParametersBufferDesc(sizeof(ConstantParameters), D3D11_BIND_CONSTANT_BUFFER);
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreateBuffer(
+			m_device->CreateBuffer(
 			&constantParametersBufferDesc,
 			nullptr,
 			&m_constantParameterBuffer
@@ -78,7 +66,7 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 
 		CD3D11_BUFFER_DESC textureProjectionBufferDesc(sizeof(TextureProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreateBuffer(
+			m_device->CreateBuffer(
 			&textureProjectionBufferDesc,
 			nullptr,
 			&m_textureProjectionBuffer
@@ -88,13 +76,14 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 
 	auto createTargetTexture = (createPSTask && createVSTask).then([this] () {
 
+		ID3D11Texture2D * renderTarget;
 		D3D11_TEXTURE2D_DESC desc;
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 		D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 
 		ZeroMemory(&desc, sizeof(desc));
-		desc.Width = m_width;
-		desc.Height = m_height;
+		desc.Width = this->GetWidth();
+		desc.Height = this->GetHeight();
 		desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.ArraySize = 1;
@@ -105,106 +94,16 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 		desc.MiscFlags = 0;
 
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreateTexture2D(
+			m_device->CreateTexture2D(
 			&desc, 
 			nullptr, 
-			&m_renderTarget)
+			&renderTarget)
 			);
 
-		renderTargetViewDesc.Format = desc.Format;
-		renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-		renderTargetViewDesc.Texture2D.MipSlice = 0;
-
-		DX::ThrowIfFailed(
-			m_d3dDevice->CreateRenderTargetView(
-			m_renderTarget.Get(),
-			&renderTargetViewDesc,
-			&m_renderTargetView)
-			);	
-
-		shaderResourceViewDesc.Format = desc.Format;
-		shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-		shaderResourceViewDesc.Texture2D.MipLevels = 1;
-
-		DX::ThrowIfFailed(
-			m_d3dDevice->CreateShaderResourceView(
-			m_renderTarget.Get(),
-			&shaderResourceViewDesc,
-			&m_renderShaderResourceView)
-			);
-
-		// Create a depth stencil view.
-		CD3D11_TEXTURE2D_DESC depthStencilDesc(
-			DXGI_FORMAT_D24_UNORM_S8_UINT,
-			static_cast<UINT>(desc.Width),
-			static_cast<UINT>(desc.Height),
-			1,
-			1,
-			D3D11_BIND_DEPTH_STENCIL
-			);
-
-		ComPtr<ID3D11Texture2D> depthStencil;
-		DX::ThrowIfFailed(
-			m_d3dDevice->CreateTexture2D(
-			&depthStencilDesc,
-			nullptr,
-			&depthStencil
-			)
-			);
-
-		CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
-		DX::ThrowIfFailed(
-			m_d3dDevice->CreateDepthStencilView(
-			depthStencil.Get(),
-			&depthStencilViewDesc,
-			&m_depthStencilView
-			)
-			);	
-
-
-		//// Set the rendering viewport to target the entire window.
-		//CD3D11_VIEWPORT viewport(
-		//	0.0f,
-		//	0.0f,
-		//	desc.Width,
-		//	desc.Height
-		//	);
-		//m_d3dContext->RSSetViewports(1, &viewport);
-		//D3D11_TEXTURE3D_DESC texDesc;
-		//texDesc.Width 	= desc.Width;
-		//texDesc.Height	= desc.Height;
-		//texDesc.Depth  	= 20;
-		//texDesc.MipLevels = 0;
-		//texDesc.Format	= DXGI_FORMAT_D32_FLOAT;
-		//texDesc.Usage      	= D3D11_USAGE_DEFAULT;
-		//texDesc.BindFlags  	= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-		//texDesc.CPUAccessFlags = 0; 
-		//texDesc.MiscFlags  	= D3D11_RESOURCE_MISC_GENERATE_MIPS;
-		//DX::ThrowIfFailed(
-		//m_d3dDevice->CreateTexture3D(
-		//&texDesc, 
-		//0, 
-		//&m_costmap
-		//)
-		//);
-		//DX::ThrowIfFailed(
-		//m_d3dDevice->CreateRenderTargetView(
-		//m_costmap.Get()->, 
-		//0, 
-		//&m_costmapRenderView
-		//)
-		//);
-		//DX::ThrowIfFailed(
-		//m_d3dDevice->CreateShaderResourceView(
-		//m_costmap.Get(), 
-		//0, 
-		//&m_costmapShaderView
-		//)
-		//);
+		this->SetTargetResource(renderTarget, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	});
 
-	auto createScene = createTargetTexture.then([this] () {
+	auto createScene = (createTargetTexture).then([this] () {
 
 		// Create surface
 		VertexPositionColor cubeVertices[] =
@@ -221,7 +120,7 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 		vertexBufferData.SysMemSlicePitch = 0;
 		CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreateBuffer(
+			m_device->CreateBuffer(
 			&vertexBufferDesc,
 			&vertexBufferData,
 			&m_vertexBuffer
@@ -243,7 +142,7 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 		CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER);
 
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreateBuffer(
+			m_device->CreateBuffer(
 			&indexBufferDesc,
 			&indexBufferData,
 			&m_indexBuffer
@@ -271,68 +170,26 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 		DX::ThrowIfFailed(
-			m_d3dDevice->CreateSamplerState(
+			m_device->CreateSamplerState(
 			&samplerDesc,
 			&m_sampler
 			)
 			);
 	});
 
-	createSampler.then([this] () {
-
-		D3D11_TEXTURE2D_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		m_renderTarget.Get()->GetDesc(&desc);
-
-		m_constantParametersBufferData.alpha = 0.9f;
-		m_constantParametersBufferData.Tc = 0.028f;
-		m_constantParametersBufferData.Tg = 0.008f;
-		m_constantParametersBufferData.dx = 1.0f / desc.Width;
-		m_textureProjectionBufferData.disparity = 0.0f;
-
-		m_loadingComplete = true;
-	});
-
+	createSampler.wait();
 }
 
-void CostVolumeRenderer::SetLeftTexture(ID3D11Texture2D * texture, ID3D11ShaderResourceView * textureView)
+void CostVolumeRenderer::SetStereoTexture(ID3D11ShaderResourceView * left, ID3D11ShaderResourceView * right)
 {
-	m_textureLeft = texture;
-	m_textureLeftView = textureView;
+	m_textureLeftView = left;
+	m_textureRightView = right;
 }
 
-void CostVolumeRenderer::SetRightTexture(ID3D11Texture2D * texture, ID3D11ShaderResourceView * textureView)
-{
-	m_textureRight = texture;
-	m_textureRightView = textureView;
-}
-
-ID3D11ShaderResourceView * * CostVolumeRenderer::GetShaderResourceView()
-{
-	return m_renderShaderResourceView.GetAddressOf();
-}
-
-void CostVolumeRenderer::Render(ID3D11DeviceContext * context)
+void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 {
 	static bool clearStencil = true;
 	const float midnightBlue[] = { 0.098f, 0.098f, 0.439f, 1.000f };
-
-	if (!m_loadingComplete)
-	{
-		context->ClearRenderTargetView(
-			m_renderTargetView.Get(),
-			midnightBlue
-			);
-
-		context->ClearDepthStencilView(
-			m_depthStencilView.Get(),
-			D3D11_CLEAR_DEPTH,
-			1.0f,
-			0
-			);
-
-		return;
-	}
 
 	ID3D11ShaderResourceView * textures[] = 
 	{
@@ -342,9 +199,10 @@ void CostVolumeRenderer::Render(ID3D11DeviceContext * context)
 
 	context->OMSetRenderTargets(
 		1,
-		m_renderTargetView.GetAddressOf(),
-		m_depthStencilView.Get()			// This increases performance!
+		m_resultTargetView.GetAddressOf(),
+		0//m_depthStencilView.Get()			// This increases performance!
 		);
+
 	context->PSSetShaderResources(
 		0, 
 		2,
@@ -354,22 +212,15 @@ void CostVolumeRenderer::Render(ID3D11DeviceContext * context)
 	if (clearStencil) 
 	{
 		context->ClearRenderTargetView(
-			m_renderTargetView.Get(),
+			m_resultTargetView.Get(),
 			midnightBlue
-			);
-
-		context->ClearDepthStencilView(
-			m_depthStencilView.Get(),
-			D3D11_CLEAR_DEPTH,
-			1.0f,
-			0
 			);
 
 		context->UpdateSubresource(
 			m_constantParameterBuffer.Get(),
 			0,
 			NULL,
-			&m_constantParametersBufferData,
+			ConstantParametersBuffer,
 			0,
 			0
 			);

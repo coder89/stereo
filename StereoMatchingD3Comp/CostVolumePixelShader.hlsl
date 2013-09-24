@@ -4,10 +4,19 @@ SamplerState Sampler;
 
 cbuffer ConstantParametersBuffer
 {
+	// Algorithm parameters
+	const float r;
+	const float epsilon;
 	const float alpha;
+	const float sigma_s;
+	const float sigma_c;
 	const float Tc;
 	const float Tg;
-	const float dx;
+
+	// Image metrics
+	float dx;				// Normalized pizel width
+	float dy;				// Normalized pixel height
+	float max_disparity;	// (1.0/max_disparity) => Normalized pixel "thickness" in Z-axis
 };
 
 cbuffer TextureProjectionConstantBuffer
@@ -19,6 +28,7 @@ struct PixelShaderInput
 {
 	float4 pos : SV_POSITION;
     float2 tex : TEXCOORD0;
+	float disparity;
 };
 
 float4 main(PixelShaderInput input) : SV_TARGET

@@ -1,4 +1,4 @@
-Texture2D Texture;
+Texture3D Texture;
 
 SamplerState Sampler;
 
@@ -11,5 +11,5 @@ struct PixelShaderInput
 float4 main(PixelShaderInput input) : SV_TARGET
 {
 	//return float4(1,1,1,1);
-	return Texture.Sample(Sampler, input.tex);
+	return Texture.Sample(Sampler, float3(input.tex, 0.5));
 }

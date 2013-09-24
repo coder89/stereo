@@ -4,60 +4,91 @@
     <FxCompile Include="SimpleVertexShader.hlsl" />
     <FxCompile Include="ToScreenPixelShader.hlsl" />
     <FxCompile Include="CostVolumePixelShader.hlsl">
-      <Filter>Cost Volume Renderer</Filter>
+      <Filter>Renderers\Cost Volume Renderer</Filter>
     </FxCompile>
     <FxCompile Include="CostVolumeVertexShader.hlsl">
-      <Filter>Cost Volume Renderer</Filter>
+      <Filter>Renderers\Cost Volume Renderer</Filter>
     </FxCompile>
     <FxCompile Include="BoxFilterVertexShader.hlsl">
-      <Filter>Box Filter</Filter>
+      <Filter>Renderers\Box Filter</Filter>
     </FxCompile>
     <FxCompile Include="BoxFilterPixelShaderW.hlsl">
-      <Filter>Box Filter</Filter>
+      <Filter>Renderers\Box Filter</Filter>
     </FxCompile>
     <FxCompile Include="BoxFIlterPixelShaderH.hlsl">
-      <Filter>Box Filter</Filter>
+      <Filter>Renderers\Box Filter</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Direct3DInterop.cpp" />
     <ClCompile Include="CubeRenderer.cpp" />
-    <ClCompile Include="Direct3DBase.cpp" />
-    <ClCompile Include="Direct3DContentProvider.cpp" />
-    <ClCompile Include="pch.cpp" />
-    <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="CostVolumeRenderer.cpp">
-      <Filter>Cost Volume Renderer</Filter>
+      <Filter>Renderers\Cost Volume Renderer</Filter>
     </ClCompile>
     <ClCompile Include="AbstractProcessingStage.cpp" />
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>Interop models</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3DBase.cpp">
+      <Filter>Interop models</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3DContentProvider.cpp">
+      <Filter>Interop models</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3DInterop.cpp">
+      <Filter>Interop models</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Headers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BasicTimer.h" />
-    <ClInclude Include="Direct3DInterop.h" />
     <ClInclude Include="CubeRenderer.h" />
-    <ClInclude Include="Direct3DBase.h" />
-    <ClInclude Include="Direct3DContentProvider.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="DDSTextureLoader.h" />
-    <ClInclude Include="dds.h" />
-    <ClInclude Include="PlatformHelpers.h" />
     <ClInclude Include="CostVolumeRenderer.h">
-      <Filter>Cost Volume Renderer</Filter>
+      <Filter>Renderers\Cost Volume Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Config.h" />
     <ClInclude Include="AbstractProcessingStage.h" />
+    <ClInclude Include="BasicTimer.h">
+      <Filter>Interop models</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Interop models</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3DBase.h">
+      <Filter>Interop models</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3DContentProvider.h">
+      <Filter>Interop models</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3DInterop.h">
+      <Filter>Interop models</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="dds.h">
+      <Filter>Interop models</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="PlatformHelpers.h">
+      <Filter>Interop models</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
       <UniqueIdentifier>{d7e2c423-7840-41e0-972d-50b835a30004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Cost Volume Renderer">
+    <Filter Include="Interop models">
+      <UniqueIdentifier>{afaf175d-5611-4493-83a1-a9dfccd532a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderers">
+      <UniqueIdentifier>{20d6b090-2f3a-48e6-b444-5273cce018de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderers\Cost Volume Renderer">
       <UniqueIdentifier>{8422b715-8bac-4af9-a41b-28d38590e50d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Cost Volume Filtering">
-      <UniqueIdentifier>{21390865-6885-432c-b079-5d3f51e24fff}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Box Filter">
+    <Filter Include="Renderers\Box Filter">
       <UniqueIdentifier>{768a0eae-3560-4562-8d04-01a0f4a774ce}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
