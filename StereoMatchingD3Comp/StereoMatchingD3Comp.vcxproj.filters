@@ -29,6 +29,7 @@
     <ClCompile Include="CostVolumeRenderer.cpp">
       <Filter>Cost Volume Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="AbstractProcessingStage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicTimer.h" />
@@ -44,6 +45,7 @@
       <Filter>Cost Volume Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Config.h" />
+    <ClInclude Include="AbstractProcessingStage.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">

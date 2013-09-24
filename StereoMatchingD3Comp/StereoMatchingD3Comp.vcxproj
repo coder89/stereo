@@ -137,6 +137,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AbstractProcessingStage.h" />
     <ClInclude Include="BasicTimer.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="CostVolumeRenderer.h" />
@@ -150,6 +151,7 @@
     <ClInclude Include="PlatformHelpers.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AbstractProcessingStage.cpp" />
     <ClCompile Include="CostVolumeRenderer.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="Direct3DInterop.cpp" />

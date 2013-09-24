@@ -1,7 +1,6 @@
-static const int r = 9;
+static const int r = 19;
 
 Texture2D Texture;
-Texture2D Texture2;
 
 SamplerState Sampler;
 

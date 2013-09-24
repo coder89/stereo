@@ -28,7 +28,7 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 		);
 
 	auto loadVSTask = DX::ReadDataAsync("CostVolumeVertexShader.cso");
-	auto loadPSTask = DX::ReadDataAsync("BoxFilterPixelShaderW.cso");
+	auto loadPSTask = DX::ReadDataAsync("BoxFilterPixelShaderH.cso");
 
 	auto createVSTask = loadVSTask.then([this](Platform::Array<byte>^ fileData) {
 		DX::ThrowIfFailed(
@@ -160,7 +160,8 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 			&depthStencilViewDesc,
 			&m_depthStencilView
 			)
-			);
+			);	
+
 
 		//// Set the rendering viewport to target the entire window.
 		//CD3D11_VIEWPORT viewport(
@@ -208,10 +209,10 @@ void CostVolumeRenderer::Initialize(uint32 width, uint32 height)
 		// Create surface
 		VertexPositionColor cubeVertices[] =
 		{
-			{ XMFLOAT3(-1.0f,  1.0f, 0.5f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT3( 1.0f,  1.0f, 0.5f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT3( 1.0f, -1.0f, 0.5f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT3(-1.0f, -1.0f, 0.5f), XMFLOAT2(0.0f, 1.0f) },
+			{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f) },
+			{ XMFLOAT3( 1.0f,  1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) },
+			{ XMFLOAT3( 1.0f, -1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f) },
+			{ XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f) },
 		};
 
 		D3D11_SUBRESOURCE_DATA vertexBufferData = {0};
@@ -313,81 +314,105 @@ ID3D11ShaderResourceView * * CostVolumeRenderer::GetShaderResourceView()
 
 void CostVolumeRenderer::Render(ID3D11DeviceContext * context)
 {
+	static bool clearStencil = true;
 	const float midnightBlue[] = { 0.098f, 0.098f, 0.439f, 1.000f };
 
 	if (!m_loadingComplete)
 	{
+		context->ClearRenderTargetView(
+			m_renderTargetView.Get(),
+			midnightBlue
+			);
+
+		context->ClearDepthStencilView(
+			m_depthStencilView.Get(),
+			D3D11_CLEAR_DEPTH,
+			1.0f,
+			0
+			);
+
 		return;
 	}
 
-	ID3D11ShaderResourceView* nullSrv = NULL;
-	context->PSSetShaderResources(0, 1, &nullSrv);
-
-	context->RSSetViewports(1, &m_viewport);
+	ID3D11ShaderResourceView * textures[] = 
+	{
+		m_textureLeftView.Get(),
+		m_textureRightView.Get()
+	};
 
 	context->OMSetRenderTargets(
 		1,
 		m_renderTargetView.GetAddressOf(),
-		m_depthStencilView.Get()
+		m_depthStencilView.Get()			// This increases performance!
+		);
+	context->PSSetShaderResources(
+		0, 
+		2,
+		textures
 		);
 
-	context->ClearRenderTargetView(
-		m_renderTargetView.Get(),
-		midnightBlue
-		);
+	if (clearStencil) 
+	{
+		context->ClearRenderTargetView(
+			m_renderTargetView.Get(),
+			midnightBlue
+			);
 
-	context->ClearDepthStencilView(
-		m_depthStencilView.Get(),
-		D3D11_CLEAR_DEPTH,
-		1.0f,
-		0
-		);
+		context->ClearDepthStencilView(
+			m_depthStencilView.Get(),
+			D3D11_CLEAR_DEPTH,
+			1.0f,
+			0
+			);
 
-	context->UpdateSubresource(
-		m_constantParameterBuffer.Get(),
-		0,
-		NULL,
-		&m_constantParametersBufferData,
-		0,
-		0
-		);
+		context->UpdateSubresource(
+			m_constantParameterBuffer.Get(),
+			0,
+			NULL,
+			&m_constantParametersBufferData,
+			0,
+			0
+			);
 
-	UINT stride = sizeof(VertexPositionColor);
-	UINT offset = 0;
-	context->IASetVertexBuffers(
-		0,
-		1,
-		m_vertexBuffer.GetAddressOf(),
-		&stride,
-		&offset
-		);
+		UINT stride = sizeof(VertexPositionColor);
+		UINT offset = 0;
+		context->IASetVertexBuffers(
+			0,
+			1,
+			m_vertexBuffer.GetAddressOf(),
+			&stride,
+			&offset
+			);
 
-	context->IASetIndexBuffer(
-		m_indexBuffer.Get(),
-		DXGI_FORMAT_R16_UINT,
-		0
-		);
+		context->IASetIndexBuffer(
+			m_indexBuffer.Get(),
+			DXGI_FORMAT_R16_UINT,
+			0
+			);
 
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	context->IASetInputLayout(m_inputLayout.Get());
+		context->IASetInputLayout(m_inputLayout.Get());
 
-	context->VSSetShader(
-		m_vertexShader.Get(),
-		nullptr,
-		0
-		);
+		context->VSSetShader(
+			m_vertexShader.Get(),
+			nullptr,
+			0
+			);
+
+		context->PSSetSamplers(
+			0, 
+			1, 
+			m_sampler.GetAddressOf()
+			);
+
+		clearStencil = false;
+	}
 
 	context->PSSetShader(
 		m_pixelShader.Get(),
 		nullptr,
 		0
-		);
-
-	context->PSSetSamplers(
-		0, 
-		1, 
-		m_sampler.GetAddressOf()
 		);
 
 	context->PSSetConstantBuffers(
@@ -396,19 +421,6 @@ void CostVolumeRenderer::Render(ID3D11DeviceContext * context)
 		m_constantParameterBuffer.GetAddressOf()
 		);
 
-	context->PSSetShaderResources(
-		0, 
-		1,
-		m_textureLeftView.GetAddressOf()
-		);
-
-	context->PSSetShaderResources(
-		1, 
-		1,
-		m_textureRightView.GetAddressOf()
-		);
-
-	for (int i = 0; i < 30; ++i)
 	context->DrawIndexed(
 		m_indexCount,
 		0,

@@ -23,8 +23,8 @@ void CubeRenderer::CreateDeviceResources()
 
 	auto loadVSTask = DX::ReadDataAsync("SimpleVertexShader.cso");
 	auto loadPSTask = DX::ReadDataAsync("ToScreenPixelShader.cso");
-	auto loadTX1Task = DX::ReadDataAsync("Media\\textures\\im2_high.dds");
-	auto loadTX2Task = DX::ReadDataAsync("Media\\textures\\im6_high.dds");
+	auto loadTX1Task = DX::ReadDataAsync("Media\\textures\\im2_medium.dds");
+	auto loadTX2Task = DX::ReadDataAsync("Media\\textures\\im6_medium.dds");
 
 	auto createVSTask = loadVSTask.then([this](Platform::Array<byte>^ fileData) {
 
@@ -319,10 +319,34 @@ void CubeRenderer::Update(float timeTotal, float timeDelta)
 
 void CubeRenderer::Render()
 {
-	const float midnightBlue[] = { 0.098f, 0.098f, 0.439f, 1.000f };
-
 	// Only draw the cube once it is loaded (loading is asynchronous).
 	if (!m_loadingComplete || !m_costVolumeRenderer->IsInitialized())
+	{
+		return;
+	}
+	
+	m_costVolumeRenderer->Render(m_d3dContext.Get());
+	
+	Render(m_costVolumeRenderer->GetShaderResourceView());
+}
+
+void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
+{
+	static bool clearStencil = true;
+	const float midnightBlue[] = { 0.098f, 0.098f, 0.439f, 1.000f };
+	
+	m_d3dContext->OMSetRenderTargets(
+		1,
+		m_renderTargetView.GetAddressOf(),
+		m_depthStencilView.Get()			// This increases performance!
+		);
+	m_d3dContext->PSSetShaderResources(
+		0, 
+		1,
+		resource
+		);
+
+	if (clearStencil)
 	{
 		m_d3dContext->ClearRenderTargetView(
 			m_renderTargetView.Get(),
@@ -336,83 +360,60 @@ void CubeRenderer::Render()
 			0
 			);
 
-		return;
+		m_d3dContext->UpdateSubresource(
+			m_constantBuffer.Get(),
+			0,
+			NULL,
+			&m_constantBufferData,
+			0,
+			0
+			);
+
+		UINT stride = sizeof(VertexPositionColor);
+		UINT offset = 0;
+		m_d3dContext->IASetVertexBuffers(
+			0,
+			1,
+			m_vertexBuffer.GetAddressOf(),
+			&stride,
+			&offset
+			);
+
+		m_d3dContext->IASetIndexBuffer(
+			m_indexBuffer.Get(),
+			DXGI_FORMAT_R16_UINT,
+			0
+			);
+
+		m_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		m_d3dContext->IASetInputLayout(m_inputLayout.Get());
+
+		m_d3dContext->VSSetShader(
+			m_vertexShader.Get(),
+			nullptr,
+			0
+			);
+
+		m_d3dContext->VSSetConstantBuffers(
+			0,
+			1,
+			m_constantBuffer.GetAddressOf()
+			);
+
+		m_d3dContext->PSSetSamplers(
+			0, 
+			1, 
+			m_sampler.GetAddressOf()
+			);
+
+		clearStencil = false;
 	}
-	
-	m_costVolumeRenderer->Render(m_d3dContext.Get());
-	
-	Render(m_costVolumeRenderer->GetShaderResourceView());
-}
-
-void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
-{
-	ID3D11ShaderResourceView* nullSrv = NULL;
-	m_d3dContext->PSSetShaderResources(0, 1, &nullSrv);
-	m_d3dContext->RSSetViewports(1, &m_viewport);
-
-	m_d3dContext->OMSetRenderTargets(
-		1,
-		m_renderTargetView.GetAddressOf(),
-		m_depthStencilView.Get()
-		);
-
-	//m_d3dContext->UpdateSubresource(
-	//	m_constantBuffer.Get(),
-	//	0,
-	//	NULL,
-	//	&m_constantBufferData,
-	//	0,
-	//	0
-	//	);
-
-	UINT stride = sizeof(VertexPositionColor);
-	UINT offset = 0;
-	m_d3dContext->IASetVertexBuffers(
-		0,
-		1,
-		m_vertexBuffer.GetAddressOf(),
-		&stride,
-		&offset
-		);
-
-	m_d3dContext->IASetIndexBuffer(
-		m_indexBuffer.Get(),
-		DXGI_FORMAT_R16_UINT,
-		0
-		);
-
-	m_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	m_d3dContext->IASetInputLayout(m_inputLayout.Get());
-
-	m_d3dContext->VSSetShader(
-		m_vertexShader.Get(),
-		nullptr,
-		0
-		);
-
-	m_d3dContext->VSSetConstantBuffers(
-		0,
-		1,
-		m_constantBuffer.GetAddressOf()
-		);
 
 	m_d3dContext->PSSetShader(
 		m_pixelShader.Get(),
 		nullptr,
 		0
-		);
-
-	m_d3dContext->PSSetSamplers(
-		0, 
-		1, 
-		m_sampler.GetAddressOf()
-		);
-
-	m_d3dContext->PSSetShaderResources(
-		0, 
-		1,
-		resource
 		);
 
 	m_d3dContext->DrawIndexed(
