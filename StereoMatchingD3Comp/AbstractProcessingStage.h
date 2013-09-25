@@ -167,9 +167,9 @@ protected:
 
 	// Result targets
 	uint8 m_resultsCount;
-	ID3D11Resource * m_resultResource[MAX_DISPARITY];
-	ID3D11ShaderResourceView * m_resultResourceView[MAX_DISPARITY];
-	ID3D11RenderTargetView * m_resultTargetView[MAX_DISPARITY];
+	ID3D11Resource * m_resultResource[MAX_DISPARITY / 4];
+	ID3D11ShaderResourceView * m_resultResourceView[MAX_DISPARITY / 4];
+	ID3D11RenderTargetView * m_resultTargetView[MAX_DISPARITY / 4];
 
 private:
 

@@ -52,7 +52,6 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader;
 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantParameterBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_textureProjectionBuffer;
 	
 	uint32 m_indexCount;

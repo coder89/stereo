@@ -56,15 +56,6 @@ Concurrency::task<void> CostVolumeRenderer::_Initialize()
 			)
 			);
 
-		CD3D11_BUFFER_DESC constantParametersBufferDesc(sizeof(ConstantParameters), D3D11_BIND_CONSTANT_BUFFER);
-		DX::ThrowIfFailed(
-			m_device->CreateBuffer(
-			&constantParametersBufferDesc,
-			nullptr,
-			&m_constantParameterBuffer
-			)
-			);
-
 		CD3D11_BUFFER_DESC textureProjectionBufferDesc(sizeof(TextureProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
 		DX::ThrowIfFailed(
 			m_device->CreateBuffer(
@@ -77,14 +68,14 @@ Concurrency::task<void> CostVolumeRenderer::_Initialize()
 
 	auto createTargetTexture = (createPSTask && createVSTask).then([this] () {
 
-		ID3D11Texture2D * targets[MAX_DISPARITY];
+		ID3D11Texture2D * targets[MAX_DISPARITY / 4];
 
 		ID3D11Texture2D * renderTarget = 0;
 		D3D11_TEXTURE2D_DESC desc;
 
 		ZeroMemory(&desc, sizeof(desc));
-		desc.Width = this->GetWidth();
-		desc.Height = this->GetHeight();
+		desc.Width = (uint32) this->GetWidth();
+		desc.Height = (uint32) this->GetHeight();
 		desc.MipLevels = 1;
 		desc.ArraySize = 1;
 		desc.SampleDesc.Count = 1;
@@ -94,7 +85,7 @@ Concurrency::task<void> CostVolumeRenderer::_Initialize()
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 
-		for (int i = 0; i < MAX_DISPARITY; ++i)
+		for (int i = 0; i < MAX_DISPARITY / 4; ++i)
 		{
 			DX::ThrowIfFailed(
 				m_device->CreateTexture2D(
@@ -106,7 +97,7 @@ Concurrency::task<void> CostVolumeRenderer::_Initialize()
 			targets[i] = renderTarget;
 		}
 
-		this->SetTargetResource(MAX_DISPARITY, targets, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		this->SetTargetResource(MAX_DISPARITY / 4, targets, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	});
 
 	auto createScene = (createTargetTexture).then([this] () {
@@ -219,15 +210,6 @@ void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 				);
 		}
 
-		context->UpdateSubresource(
-			m_constantParameterBuffer.Get(),
-			0,
-			NULL,
-			ConstantParametersBuffer,
-			0,
-			0
-			);
-
 		UINT stride = sizeof(VertexPositionColor);
 		UINT offset = 0;
 		context->IASetVertexBuffers(
@@ -269,13 +251,7 @@ void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 		0
 		);
 
-	context->PSSetConstantBuffers(
-		0,
-		1,
-		m_constantParameterBuffer.GetAddressOf()
-		);
-	
-	for (int i = 0; i < m_resultsCount; i+=1)
+	for (int i = 0; i < m_resultsCount; i+=4)
 	{
 		context->OMSetRenderTargets(
 			1,

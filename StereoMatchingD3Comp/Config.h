@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_DISPARITY 20
+#define MAX_DISPARITY 16
 
 __declspec(align(16)) struct ConstantParameters
 {
@@ -40,5 +40,9 @@ __declspec(align(16)) struct ConstantParameters
 	float dy;				// Normalized pixel height
 	float dz;				// Normalized pixel "thickness" in Z-axis => (1.0/dz) = max_disparity
 };
+
+#if MAX_DISPARITY % 16
+	#error MAX_DISTARITY has to be dividable by 4!
+#endif
 
 extern ConstantParameters * ConstantParametersBuffer;

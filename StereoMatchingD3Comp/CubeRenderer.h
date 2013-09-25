@@ -45,8 +45,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantBuffer;
+
+	CostVolumeRenderer * m_costVolumeRenderer;
 	
 	uint32 m_indexCount;
-	ModelViewProjectionConstantBuffer m_constantBufferData;
-	CostVolumeRenderer * m_costVolumeRenderer;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantParameterBuffer;
 };

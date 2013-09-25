@@ -69,17 +69,25 @@ void CubeRenderer::CreateDeviceResources()
 			)
 			);
 
-		CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+		//CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+		//DX::ThrowIfFailed(
+		//	m_d3dDevice->CreateBuffer(
+		//	&constantBufferDesc,
+		//	nullptr,
+		//	&m_constantBuffer
+		//	)
+		//	);
+
+		CD3D11_BUFFER_DESC constantParametersBufferDesc(sizeof(ConstantParameters), D3D11_BIND_CONSTANT_BUFFER);
 		DX::ThrowIfFailed(
 			m_d3dDevice->CreateBuffer(
-			&constantBufferDesc,
+			&constantParametersBufferDesc,
 			nullptr,
-			&m_constantBuffer
+			&m_constantParameterBuffer
 			)
 			);
-
 	});
-	
+
 	auto createTX1Task = loadTX1Task.then([this](Platform::Array<byte>^ fileData) {
 
 		ComPtr<ID3D11Resource> texture;
@@ -125,14 +133,14 @@ void CubeRenderer::CreateDeviceResources()
 			textureView.As(&m_texture2View)
 			);
 	});
-	
+
 	auto setInputImages = (createTX1Task && createTX2Task && initCVRenderer).then([this] () {
 
 		ConstantParametersBuffer->dx = 1.0f / m_renderTargetSize.Width;
 		ConstantParametersBuffer->dy = 1.0f / m_renderTargetSize.Height;
 
 		m_costVolumeRenderer->SetStereoTexture(m_texture1View.Get(), m_texture2View.Get());
-		
+
 		// create the sampler
 		D3D11_SAMPLER_DESC samplerDesc;
 		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -158,7 +166,7 @@ void CubeRenderer::CreateDeviceResources()
 	});
 
 	auto createScene = (createVSTask && createPSTask && setInputImages).then([this] () {
-		
+
 		VertexPositionTexel surfaceVertices[] =
 		{
 			{ XMFLOAT3(-1.0,  1.0, 0.5f), XMFLOAT2(0.0f, 0.0f) },
@@ -220,24 +228,24 @@ void CubeRenderer::CreateWindowSizeDependentResources()
 		fovAngleY /= aspectRatio;
 	}
 
-	XMStoreFloat4x4(
-		&m_constantBufferData.projection,
-		XMMatrixTranspose(
-		XMMatrixPerspectiveFovRH(
-		fovAngleY,
-		aspectRatio,
-		0.01f,
-		100.0f
-		)
-		)
-		);
+	/*XMStoreFloat4x4(
+	&m_constantBufferData.projection,
+	XMMatrixTranspose(
+	XMMatrixPerspectiveFovRH(
+	fovAngleY,
+	aspectRatio,
+	0.01f,
+	100.0f
+	)
+	)
+	);
 
 	XMVECTOR eye = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 	XMVECTOR at = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
 	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
-	XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixIdentity());// XMMatrixTranspose(XMMatrixRotationY(timeTotal * XM_PIDIV4)));
+	XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixIdentity());*/// XMMatrixTranspose(XMMatrixRotationY(timeTotal * XM_PIDIV4)));
 }
 
 void CubeRenderer::Update(float timeTotal, float timeDelta)
@@ -259,7 +267,22 @@ void CubeRenderer::Render()
 	{
 		return;
 	}
-	
+
+	m_d3dContext->UpdateSubresource(
+		m_constantParameterBuffer.Get(),
+		0,
+		NULL,
+		ConstantParametersBuffer,
+		0,
+		0
+		);
+
+	m_d3dContext->PSSetConstantBuffers(
+		0,
+		1,
+		m_constantParameterBuffer.GetAddressOf()
+		);
+
 	m_costVolumeRenderer->Render(m_d3dContext.Get());
 
 	Render(m_costVolumeRenderer->GetResultViews());
@@ -269,7 +292,7 @@ void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
 {
 	static bool clearStencil = true;
 	const float midnightBlue[] = { 0.098f, 0.098f, 0.439f, 1.000f };
-	
+
 	m_d3dContext->OMSetRenderTargets(
 		1,
 		m_renderTargetView.GetAddressOf(),
@@ -295,14 +318,14 @@ void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
 		//	0
 		//	);
 
-		m_d3dContext->UpdateSubresource(
-			m_constantBuffer.Get(),
-			0,
-			NULL,
-			&m_constantBufferData,
-			0,
-			0
-			);
+		/*m_d3dContext->UpdateSubresource(
+		m_constantBuffer.Get(),
+		0,
+		NULL,
+		&m_constantBufferData,
+		0,
+		0
+		);*/
 
 		UINT stride = sizeof(VertexPositionTexel);
 		UINT offset = 0;
