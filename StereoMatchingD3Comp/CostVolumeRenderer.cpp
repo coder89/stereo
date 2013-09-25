@@ -13,7 +13,7 @@ CostVolumeRenderer::CostVolumeRenderer(ID3D11Device1 * device, Windows::Foundati
 {
 }
 
-void CostVolumeRenderer::_Initialize()
+Concurrency::task<void> CostVolumeRenderer::_Initialize()
 {
 	auto loadVSTask = DX::ReadDataAsync("CostVolumeVertexShader.cso");
 	auto loadPSTask = DX::ReadDataAsync("CostVolumePixelShader.cso");
@@ -30,8 +30,8 @@ void CostVolumeRenderer::_Initialize()
 
 		const D3D11_INPUT_ELEMENT_DESC vertexDesc[] = 
 		{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+			{ "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 		};
 
 		DX::ThrowIfFailed(
@@ -43,6 +43,7 @@ void CostVolumeRenderer::_Initialize()
 			&m_inputLayout
 			)
 			);
+
 	});
 
 	auto createPSTask = loadPSTask.then([this](Platform::Array<byte>^ fileData) {
@@ -76,31 +77,36 @@ void CostVolumeRenderer::_Initialize()
 
 	auto createTargetTexture = (createPSTask && createVSTask).then([this] () {
 
-		ID3D11Texture2D * renderTarget;
+		ID3D11Texture2D * targets[MAX_DISPARITY];
+
+		ID3D11Texture2D * renderTarget = 0;
 		D3D11_TEXTURE2D_DESC desc;
-		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 
 		ZeroMemory(&desc, sizeof(desc));
 		desc.Width = this->GetWidth();
 		desc.Height = this->GetHeight();
+		desc.MipLevels = 1;
+		desc.ArraySize = 1;
+		desc.SampleDesc.Count = 1;
 		desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.ArraySize = 1;
-		desc.MipLevels = 1;
-		desc.SampleDesc.Count = 1;
 		desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 
-		DX::ThrowIfFailed(
-			m_device->CreateTexture2D(
-			&desc, 
-			nullptr, 
-			&renderTarget)
-			);
+		for (int i = 0; i < MAX_DISPARITY; ++i)
+		{
+			DX::ThrowIfFailed(
+				m_device->CreateTexture2D(
+				&desc, 
+				nullptr, 
+				&renderTarget)
+				);
 
-		this->SetTargetResource(renderTarget, DXGI_FORMAT_R32G32B32A32_FLOAT);
+			targets[i] = renderTarget;
+		}
+
+		this->SetTargetResource(MAX_DISPARITY, targets, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	});
 
 	auto createScene = (createTargetTexture).then([this] () {
@@ -148,7 +154,6 @@ void CostVolumeRenderer::_Initialize()
 			&m_indexBuffer
 			)
 			);
-
 	});
 
 	auto createSampler = createScene.then([this] () {
@@ -177,7 +182,7 @@ void CostVolumeRenderer::_Initialize()
 			);
 	});
 
-	createSampler.wait();
+	return createSampler;
 }
 
 void CostVolumeRenderer::SetStereoTexture(ID3D11ShaderResourceView * left, ID3D11ShaderResourceView * right)
@@ -196,12 +201,7 @@ void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 		m_textureLeftView.Get(),
 		m_textureRightView.Get()
 	};
-
-	context->OMSetRenderTargets(
-		1,
-		m_resultTargetView.GetAddressOf(),
-		0//m_depthStencilView.Get()			// This increases performance!
-		);
+	
 
 	context->PSSetShaderResources(
 		0, 
@@ -211,10 +211,13 @@ void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 
 	if (clearStencil) 
 	{
-		context->ClearRenderTargetView(
-			m_resultTargetView.Get(),
-			midnightBlue
-			);
+		for (int i = 0; i < m_resultsCount; ++i)
+		{
+			context->ClearRenderTargetView(
+				m_resultTargetView[i],
+				midnightBlue
+				);
+		}
 
 		context->UpdateSubresource(
 			m_constantParameterBuffer.Get(),
@@ -271,10 +274,19 @@ void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 		1,
 		m_constantParameterBuffer.GetAddressOf()
 		);
+	
+	for (int i = 0; i < m_resultsCount; i+=1)
+	{
+		context->OMSetRenderTargets(
+			1,
+			this->GetRenderTargets() + i,
+			0//m_depthStencilView.Get()			// This increases performance!
+			);
 
-	context->DrawIndexed(
-		m_indexCount,
-		0,
-		0
-		);
+		context->DrawIndexed(
+			m_indexCount,
+			0,
+			0
+			);
+	}
 }

@@ -16,46 +16,64 @@ cbuffer ConstantParametersBuffer
 	// Image metrics
 	float dx;				// Normalized pizel width
 	float dy;				// Normalized pixel height
-	float max_disparity;	// (1.0/max_disparity) => Normalized pixel "thickness" in Z-axis
-};
-
-cbuffer TextureProjectionConstantBuffer
-{
-	float2 disparity;
+	float dz;				// Normalized pixel "thickness" in Z-axis => 1/dz = max_disparity
 };
 
 struct PixelShaderInput
 {
 	float4 pos : SV_POSITION;
-    float2 tex : TEXCOORD0;
-	float disparity;
+	float2 tex : TEXCOORD0;
+	float disparity : DISPARITY;
 };
 
-float4 main(PixelShaderInput input) : SV_TARGET
+struct PixelShaderOutput
 {
+	float4 color1 : SV_TARGET0;
+	float4 color2 : SV_TARGET1;
+	float4 color3 : SV_TARGET2;
+	float4 color4 : SV_TARGET3;
+};
+
+float4 main(PixelShaderInput input) : SV_TARGET0
+{
+	PixelShaderOutput output;
+
 	float4 px0_left = Textures[0].Sample(Sampler, input.tex - float2(dx, 0.0f));
 	float4 px1_left = Textures[0].Sample(Sampler, input.tex);
 	float4 px2_left = Textures[0].Sample(Sampler, input.tex + float2(dx, 0.0f));
+	//vector<float, 4> C;
 
-	float2 dispTex = input.tex - disparity;
-	float4 px0_right = Textures[1].Sample(Sampler, dispTex - float2(dx, 0.0f));
-	float4 px1_right = Textures[1].Sample(Sampler, dispTex);
-	float4 px2_right = Textures[1].Sample(Sampler, dispTex + float2(dx, 0.0f));
+	//for (int i = 0; i < 4; ++i)
+	//{
+		float2 dispTex = input.tex - float2(dz * (input.disparity), 0.0f);
+		float4 px0_right = Textures[1].Sample(Sampler, dispTex - float2(dx, 0.0f));
+		float4 px1_right = Textures[1].Sample(Sampler, dispTex);
+		float4 px2_right = Textures[1].Sample(Sampler, dispTex + float2(dx, 0.0f));
 
-	float G = abs(
-					0.149468010646888f * (px2_left[0] - px0_left[0] - px2_right[0] + px0_right[0]) + 
-					0.293521537225561f * (px2_left[1] - px0_left[1] - px2_right[1] + px0_right[1]) + 
-					0.057010452127552f * (px2_left[2] - px0_left[2] - px2_right[2] + px0_right[2])
-			     );
+		float G = abs(
+			0.149468010646888f * (px2_left[0] - px0_left[0] - px2_right[0] + px0_right[0]) + 
+			0.293521537225561f * (px2_left[1] - px0_left[1] - px2_right[1] + px0_right[1]) + 
+			0.057010452127552f * (px2_left[2] - px0_left[2] - px2_right[2] + px0_right[2])
+			);
 
-	float M = abs(
-					px1_left[0] + px1_left[1] + px1_left[2] - px1_right[0] - px1_right[1] - px1_right[2]
-				 );
+		float M = abs(
+			px1_left[0] + px1_left[1] + px1_left[2] - px1_right[0] - px1_right[1] - px1_right[2]
+		);
 
-	float C = alpha * min(Tc, M) + (1 - alpha) * min(Tg, G);
-	
-	if (C < 0.02f)
-		C = 1.0f;
+		float tC = alpha * min(Tc, M) + (1 - alpha) * min(Tg, G);
+		
+		if (tC < 0.02f)
+			tC = 1.0f;
 
-    return float4(C, C, C, 1.0f);
+		return float4(tC,tC,tC,1.0f);
+
+	//	C[i] = tC;
+	//}
+
+	//output.color1 = float4(C[0], C[0], C[0], 1.0f);
+	//output.color2 = float4(C[1], C[1], C[1], 1.0f);
+	//output.color3 = float4(C[2], C[2], C[2], 1.0f);
+	//output.color4 = float4(C[3], C[3], C[3], 1.0f);
+
+	//return output;
 }

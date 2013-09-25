@@ -262,7 +262,7 @@ void CubeRenderer::Render()
 	
 	m_costVolumeRenderer->Render(m_d3dContext.Get());
 
-	Render(m_costVolumeRenderer->GetResultView());
+	Render(m_costVolumeRenderer->GetResultViews());
 }
 
 void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)

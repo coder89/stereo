@@ -11,6 +11,12 @@ class CostVolumeRenderer : public AbstractProcessingStage
 		float disparity;	// Used to calculate cost volume for different disparities
 	};
 
+	struct InstanceBuffer
+	{
+		DirectX::XMFLOAT3 pos;
+		//float disparity;	// Used to calculate cost volume for different disparities
+	};
+
 	struct VertexPositionColor
 	{
 		DirectX::XMFLOAT3 pos;
@@ -28,7 +34,7 @@ public:
 private:
 
 	// Initialize rendering stage
-	void _Initialize();
+	Concurrency::task<void> _Initialize();
 
 	// [overriden] Renders complete stage
 	void _Render(ID3D11DeviceContext1 * context);
@@ -37,9 +43,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_textureLeftView;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_textureRightView;
 	
-
-
-
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> m_sampler;
 	
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
@@ -53,5 +56,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_textureProjectionBuffer;
 	
 	uint32 m_indexCount;
+	uint32 m_vertexCount;
 	TextureProjectionConstantBuffer m_textureProjectionBufferData;
 };

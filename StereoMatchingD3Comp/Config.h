@@ -19,11 +19,11 @@ __declspec(align(16)) struct ConstantParameters
 		this->sigma_c = sigma_c;
 		this->Tc = Tc;
 		this->Tg = Tg;
-		this->max_disparity = MAX_DISPARITY;
 
 		// Default and has to be initialized later on
 		this->dx = 0;
 		this->dy = 0;
+		this->dz = 1.0f / (float) MAX_DISPARITY;
 	}
 
 	// Algorithm parameters
@@ -38,7 +38,7 @@ __declspec(align(16)) struct ConstantParameters
 	// Image metrics
 	float dx;				// Normalized pizel width
 	float dy;				// Normalized pixel height
-	float max_disparity;	// (1.0/max_disparity) => Normalized pixel "thickness" in Z-axis
+	float dz;				// Normalized pixel "thickness" in Z-axis => (1.0/dz) = max_disparity
 };
 
 extern ConstantParameters * ConstantParametersBuffer;
