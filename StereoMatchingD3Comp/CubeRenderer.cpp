@@ -22,8 +22,10 @@ void CubeRenderer::CreateDeviceResources()
 	Direct3DBase::CreateDeviceResources();
 
 	m_costVolumeRenderer = new CostVolumeRenderer(m_d3dDevice.Get(), Size(900, 750));
+	m_meanImagesRenderer = new MeanImagesRenderer(m_d3dDevice.Get(), Size(900, 750));
 
 	auto initCVRenderer = m_costVolumeRenderer->Initialize();
+	auto initMIRenderer = m_meanImagesRenderer->Initialize();
 
 	auto loadVSTask = DX::ReadDataAsync("SimpleVertexShader.cso");
 	auto loadPSTask = DX::ReadDataAsync("ToScreenPixelShader.cso");
@@ -134,12 +136,13 @@ void CubeRenderer::CreateDeviceResources()
 			);
 	});
 
-	auto setInputImages = (createTX1Task && createTX2Task && initCVRenderer).then([this] () {
+	auto setInputImages = (createTX1Task && createTX2Task && initCVRenderer && initMIRenderer).then([this] () {
 
 		ConstantParametersBuffer->dx = 1.0f / m_renderTargetSize.Width;
 		ConstantParametersBuffer->dy = 1.0f / m_renderTargetSize.Height;
 
 		m_costVolumeRenderer->SetStereoTexture(m_texture1View.Get(), m_texture2View.Get());
+		m_meanImagesRenderer->SetStereoTexture(m_texture1View.Get(), m_texture2View.Get());
 
 		// create the sampler
 		D3D11_SAMPLER_DESC samplerDesc;
@@ -285,7 +288,10 @@ void CubeRenderer::Render()
 
 	m_costVolumeRenderer->Render(m_d3dContext.Get());
 
-	Render(m_costVolumeRenderer->GetResultViews());
+	m_meanImagesRenderer->SetCostVolume(m_costVolumeRenderer->GetResultViews(), MAX_DISPARITY / 4);
+	m_meanImagesRenderer->Render(m_d3dContext.Get());
+
+	Render(m_meanImagesRenderer->GetResultViews());
 }
 
 void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)

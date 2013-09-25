@@ -142,6 +142,9 @@
     <None Include="Properties\WMAppManifest.xml">
       <SubType>Designer</SubType>
     </None>
+    <None Include="StereoMatchingD3_2013_09_25_22_47_36.sap" />
+    <None Include="StereoMatchingD3_2013_09_25_22_49_10.sap" />
+    <None Include="StereoMatchingD3_2013_09_25_22_49_34.sap" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\AlignmentGrid.png" />

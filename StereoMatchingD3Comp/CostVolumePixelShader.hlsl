@@ -1,5 +1,4 @@
 Texture2D Textures[2];
-
 SamplerState Sampler;
 
 cbuffer ConstantParametersBuffer
@@ -48,7 +47,7 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET0
 	{
 		for (int j = 0; j < 4; ++j)
 		{
-			float2 dispTex = input.tex - float2(dx * (input.disparity), 0.0f);
+			float2 dispTex = input.tex - float2(dx * (input.disparity * i + j), 0.0f);
 			float4 px0_right = Textures[1].Sample(Sampler, dispTex - float2(dx, 0.0f));
 			float4 px1_right = Textures[1].Sample(Sampler, dispTex);
 			float4 px2_right = Textures[1].Sample(Sampler, dispTex + float2(dx, 0.0f));
@@ -68,16 +67,9 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET0
 			if (tC < 0.02f)
 				tC = 1.0f;
 
-			//return float4(tC,tC,tC,1.0f);
-
 			C[i][j] = tC;
 		}
 	}
-	
-	//output.color1 = C[0];
-	//output.color2 = C[1];
-	//output.color3 = C[2];
-	//output.color4 = C[3];
 
 	output.color1 = float4(C[0][0], C[0][1], C[0][2], C[0][3]);
 	output.color2 = float4(C[1][0], C[1][1], C[1][2], C[0][3]);

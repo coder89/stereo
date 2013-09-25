@@ -23,3 +23,5 @@
 #include <queue>
 #include <string>
 #include <set>
+
+#include "AbstractProcessingStage.h"

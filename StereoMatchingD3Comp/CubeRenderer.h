@@ -2,6 +2,7 @@
 
 #include "Direct3DBase.h"
 #include "CostVolumeRenderer.h"
+#include "MeanImagesRenderer.h"
 
 struct ModelViewProjectionConstantBuffer
 {
@@ -47,6 +48,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantBuffer;
 
 	CostVolumeRenderer * m_costVolumeRenderer;
+	MeanImagesRenderer * m_meanImagesRenderer;
 	
 	uint32 m_indexCount;
 

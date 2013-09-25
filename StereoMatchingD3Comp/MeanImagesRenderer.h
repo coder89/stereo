@@ -3,20 +3,9 @@
 #include "Direct3DBase.h"
 
 // This class renders a simple spinning cube.
-class CostVolumeRenderer : public AbstractProcessingStage
+class MeanImagesRenderer : public AbstractProcessingStage
 {
-	__declspec(align(16)) struct TextureProjectionConstantBuffer
-	{
-		float disparity;	// Used to calculate cost volume for different disparities
-	};
-
-	struct InstanceBuffer
-	{
-		DirectX::XMFLOAT3 pos;
-		//float disparity;	// Used to calculate cost volume for different disparities
-	};
-
-	struct VertexPositionColor
+	struct VertexPosition
 	{
 		DirectX::XMFLOAT3 pos;
 		DirectX::XMFLOAT2 tex;
@@ -24,11 +13,13 @@ class CostVolumeRenderer : public AbstractProcessingStage
 
 public:
 
-	CostVolumeRenderer(ID3D11Device1 * device, Windows::Foundation::Size viewportSize);
+	MeanImagesRenderer(ID3D11Device1 * device, Windows::Foundation::Size viewportSize);
 
 	// Sets textures
 	void SetStereoTexture(ID3D11ShaderResourceView * left, ID3D11ShaderResourceView * right);
 
+	// Sets cost volume textures
+	void SetCostVolume(ID3D11ShaderResourceView * * costVolume, uint8 count);
 
 private:
 
@@ -37,10 +28,14 @@ private:
 
 	// [overriden] Renders complete stage
 	void _Render(ID3D11DeviceContext1 * context);
+	void _RenderImages(ID3D11DeviceContext1 * context);
+	void _RenderCostVolumes(ID3D11DeviceContext1 * context);
+	void _RenderImageCostVolumes(ID3D11DeviceContext1 * context);
 
 	// Input resource views
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_textureLeftView;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_textureRightView;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_costVolume[MAX_DISPARITY / 4];
 	
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> m_sampler;
 	
@@ -49,11 +44,12 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_indexBuffer;
 
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_CV_H;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_CV_W;
 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> m_textureProjectionBuffer;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_ICV_H;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_ICV_W;
 	
 	uint32 m_indexCount;
 	uint32 m_vertexCount;
-	TextureProjectionConstantBuffer m_textureProjectionBufferData;
 };

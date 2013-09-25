@@ -18,6 +18,15 @@
     <FxCompile Include="BoxFIlterPixelShaderH.hlsl">
       <Filter>Renderers\Box Filter</Filter>
     </FxCompile>
+    <FxCompile Include="MeanImageVertexShader.hlsl">
+      <Filter>Renderers\Mean Images Renderer</Filter>
+    </FxCompile>
+    <FxCompile Include="MeanCostVolumePixelShaderH.hlsl">
+      <Filter>Renderers\Mean Images Renderer</Filter>
+    </FxCompile>
+    <FxCompile Include="MeanCostVolumePixelShaderW.hlsl">
+      <Filter>Renderers\Mean Images Renderer</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CubeRenderer.cpp" />
@@ -39,6 +48,9 @@
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Headers</Filter>
+    </ClCompile>
+    <ClCompile Include="MeanImagesRenderer.cpp">
+      <Filter>Renderers\Mean Images Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -74,6 +86,9 @@
     <ClInclude Include="PlatformHelpers.h">
       <Filter>Interop models</Filter>
     </ClInclude>
+    <ClInclude Include="MeanImagesRenderer.h">
+      <Filter>Renderers\Mean Images Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -90,6 +105,9 @@
     </Filter>
     <Filter Include="Renderers\Box Filter">
       <UniqueIdentifier>{768a0eae-3560-4562-8d04-01a0f4a774ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderers\Mean Images Renderer">
+      <UniqueIdentifier>{c8a8febb-f613-4414-8433-96c2aa266033}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

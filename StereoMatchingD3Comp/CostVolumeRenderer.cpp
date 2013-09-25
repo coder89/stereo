@@ -103,7 +103,7 @@ Concurrency::task<void> CostVolumeRenderer::_Initialize()
 	auto createScene = (createTargetTexture).then([this] () {
 
 		// Create surface
-		VertexPositionColor cubeVertices[] =
+		VertexPositionColor vertices[] =
 		{
 			{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f) },
 			{ XMFLOAT3( 1.0f,  1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) },
@@ -112,10 +112,10 @@ Concurrency::task<void> CostVolumeRenderer::_Initialize()
 		};
 
 		D3D11_SUBRESOURCE_DATA vertexBufferData = {0};
-		vertexBufferData.pSysMem = cubeVertices;
+		vertexBufferData.pSysMem = vertices;
 		vertexBufferData.SysMemPitch = 0;
 		vertexBufferData.SysMemSlicePitch = 0;
-		CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
+		CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(vertices), D3D11_BIND_VERTEX_BUFFER);
 		DX::ThrowIfFailed(
 			m_device->CreateBuffer(
 			&vertexBufferDesc,
@@ -202,10 +202,10 @@ void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 
 	if (clearStencil) 
 	{
-		for (int i = 0; i < m_resultsCount; ++i)
+		for (int i = 0; i < m_resultsCount[0]; ++i)
 		{
 			context->ClearRenderTargetView(
-				m_resultTargetView[i],
+				m_resultTargetView[0][i],
 				midnightBlue
 				);
 		}
@@ -251,10 +251,10 @@ void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 		0
 		);
 
-	for (int i = 0; i < m_resultsCount; i+=4)
+	for (int i = 0; i < m_resultsCount[0]; i+=4)
 	{
 		context->OMSetRenderTargets(
-			1,
+			4,
 			this->GetRenderTargets() + i,
 			0//m_depthStencilView.Get()			// This increases performance!
 			);
