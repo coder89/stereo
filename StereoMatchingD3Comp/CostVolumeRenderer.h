@@ -29,6 +29,15 @@ public:
 	// Sets textures
 	void SetStereoTexture(ID3D11ShaderResourceView * left, ID3D11ShaderResourceView * right);
 
+	/* Renders cost volume images for 2 input images.
+	 * Each output images contains costs for 4 image pairs in separate channel.
+	 * So output array has to be of size = maxDisparity / 4 .
+	 * Caller is responsible for releasing shader resource handlers.
+	 */
+	void RenderCostVolumes(ID3D11DeviceContext1 * context,
+							ID3D11ShaderResourceView * * images, 
+							uint8 maxDisparity,
+							const Texture * (*output)[]);
 
 private:
 

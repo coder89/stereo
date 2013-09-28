@@ -53,4 +53,5 @@ private:
 	uint32 m_indexCount;
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantParameterBuffer;
+	bool m_sameImage;
 };

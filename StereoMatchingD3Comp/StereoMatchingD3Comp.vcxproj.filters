@@ -1,8 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <FxCompile Include="SimpleVertexShader.hlsl" />
-    <FxCompile Include="ToScreenPixelShader.hlsl" />
     <FxCompile Include="CostVolumePixelShader.hlsl">
       <Filter>Renderers\Cost Volume Renderer</Filter>
     </FxCompile>
@@ -19,24 +17,37 @@
       <Filter>Renderers\Box Filter</Filter>
     </FxCompile>
     <FxCompile Include="MeanImageVertexShader.hlsl">
-      <Filter>Renderers\Mean Images Renderer</Filter>
+      <Filter>Renderers\Image Statistic Renderer</Filter>
     </FxCompile>
-    <FxCompile Include="MeanCostVolumePixelShaderH.hlsl">
-      <Filter>Renderers\Mean Images Renderer</Filter>
+    <FxCompile Include="ToScreenPixelShader.hlsl">
+      <Filter>Renderers\To Screen</Filter>
     </FxCompile>
-    <FxCompile Include="MeanCostVolumePixelShaderW.hlsl">
-      <Filter>Renderers\Mean Images Renderer</Filter>
+    <FxCompile Include="SimpleVertexShader.hlsl">
+      <Filter>Renderers\To Screen</Filter>
     </FxCompile>
-    <FxCompile Include="MultiplyColorAndGrayPixelShader.hlsl">
+    <FxCompile Include="MixChannels_PixelShader.hlsl">
+      <Filter>Renderers\Common Renderers</Filter>
+    </FxCompile>
+    <FxCompile Include="Covariance_PixelShader.hlsl">
+      <Filter>Renderers\Image Statistic Renderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Variance_PixelShader.hlsl">
+      <Filter>Renderers\Image Statistic Renderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Mean_PixelShaderH.hlsl">
+      <Filter>Renderers\Image Statistic Renderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Mean_PixelShaderW.hlsl">
+      <Filter>Renderers\Image Statistic Renderer</Filter>
+    </FxCompile>
+    <FxCompile Include="MultiplyWages_PixelShader.hlsl">
       <Filter>Renderers\Common Renderers</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CubeRenderer.cpp" />
     <ClCompile Include="CostVolumeRenderer.cpp">
       <Filter>Renderers\Cost Volume Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="AbstractProcessingStage.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp">
       <Filter>Interop models</Filter>
     </ClCompile>
@@ -53,16 +64,28 @@
       <Filter>Headers</Filter>
     </ClCompile>
     <ClCompile Include="MeanImagesRenderer.cpp">
-      <Filter>Renderers\Mean Images Renderer</Filter>
+      <Filter>Renderers\Image Statistic Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="TextureCache.cpp" />
+    <ClCompile Include="CubeRenderer.cpp">
+      <Filter>Renderers\To Screen</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureCache.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="AbstractProcessingStage.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="Variance.cpp">
+      <Filter>Renderers\Variance</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadersLoader.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CubeRenderer.h" />
     <ClInclude Include="CostVolumeRenderer.h">
       <Filter>Renderers\Cost Volume Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="AbstractProcessingStage.h" />
     <ClInclude Include="BasicTimer.h">
       <Filter>Interop models</Filter>
     </ClInclude>
@@ -91,9 +114,23 @@
       <Filter>Interop models</Filter>
     </ClInclude>
     <ClInclude Include="MeanImagesRenderer.h">
-      <Filter>Renderers\Mean Images Renderer</Filter>
+      <Filter>Renderers\Image Statistic Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="TextureCache.h" />
+    <ClInclude Include="CubeRenderer.h">
+      <Filter>Renderers\To Screen</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureCache.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractProcessingStage.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Variance.h">
+      <Filter>Renderers\Variance</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadersLoader.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -111,11 +148,20 @@
     <Filter Include="Renderers\Box Filter">
       <UniqueIdentifier>{768a0eae-3560-4562-8d04-01a0f4a774ce}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderers\Mean Images Renderer">
-      <UniqueIdentifier>{c8a8febb-f613-4414-8433-96c2aa266033}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderers\Common Renderers">
       <UniqueIdentifier>{c8ae7d64-a5a6-45b8-b948-bb14e12662e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderers\To Screen">
+      <UniqueIdentifier>{d50a6385-3d82-46cf-b5f7-346a94a83ce2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Helpers">
+      <UniqueIdentifier>{57bdbc9f-dc13-46dd-83a3-4e6c17b24010}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderers\Variance">
+      <UniqueIdentifier>{abacd2a3-fc54-41ee-ad30-74ed65a2ebe6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderers\Image Statistic Renderer">
+      <UniqueIdentifier>{c8a8febb-f613-4414-8433-96c2aa266033}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
