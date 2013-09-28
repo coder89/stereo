@@ -59,6 +59,37 @@ public:
 							ID3D11ShaderResourceView * * meanImageCostVolumes, 
 							const Texture * (*output)[], 
 							uint8 count);
+	
+	/* Render linear function of 3 given images, 
+	 * where 'a' and 'b' are parameters (arrays) 
+	 * and 'image' is a constant
+	 * Caller is responsible for releasing shader resource handlers.
+	 */
+	void RenderLinear(ID3D11DeviceContext * context, 
+						ID3D11ShaderResourceView * * a, 
+						ID3D11ShaderResourceView * image, 
+						ID3D11ShaderResourceView * * b, 
+						const Texture * (*output)[], 
+						uint8 count);
+	
+	/* Render 'a' image by multiplying convolution pixel with inverted variance array.
+	 * Caller is responsible for releasing shader resource handlers.
+	 */
+	void RenderA(ID3D11DeviceContext * context, 
+					ID3D11ShaderResourceView * * convolution, 
+					ID3D11ShaderResourceView * * variance, 
+					const Texture * (*output)[], 
+					uint8 count);
+	
+	/* Render 'b' image b = boxFIlter(d) - a * boxFilter(I)
+	 * Caller is responsible for releasing shader resource handlers.
+	 */
+	void RenderB(ID3D11DeviceContext * context, 
+					ID3D11ShaderResourceView * * meanD, 
+					ID3D11ShaderResourceView * * a, 
+					ID3D11ShaderResourceView * meanImage, 
+					const Texture * (*output)[], 
+					uint8 count);
 
 private:
 	
@@ -69,6 +100,7 @@ private:
 
 	// [overriden] Renders complete stage
 	void _Render(ID3D11DeviceContext1 * context);
+
 	// Input resource views
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_textureLeftView;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_textureRightView;

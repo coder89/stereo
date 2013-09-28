@@ -265,6 +265,9 @@ void CubeRenderer::Render()
 		meanInputImages, 
 		(const Texture*(*)[]) &varianceInputImages, 
 		ARRAYSIZE(inputImages));
+	ID3D11ShaderResourceView * varianceInputImages_resourceViews[ARRAYSIZE(varianceInputImages)];
+	for (int i = 0; i < ARRAYSIZE(varianceInputImages); ++i)
+		varianceInputImages_resourceViews[i] = varianceInputImages[i]->ResourceView;
 
 	// Render cost volumes for input images
 	const Texture * costVolumes[MAX_DISPARITY / 4];
@@ -304,22 +307,86 @@ void CubeRenderer::Render()
 		meanImageCostVolumes_resourceViews, 
 		(const Texture*(*)[]) &convolution,
 		ARRAYSIZE(meanImageCostVolumes_resourceViews));
+	ID3D11ShaderResourceView * convolution_resourceViews[ARRAYSIZE(convolution)];
+	for (int i = 0; i < ARRAYSIZE(convolution); ++i)
+		convolution_resourceViews[i] = convolution[i]->ResourceView;
 	for (int i = 0; i < ARRAYSIZE(meanImageCostVolumes); ++i) // We don't need images multiplied by cost volumes anymore
 		TexturesBuffer->Free(meanImageCostVolumes[i]);
-	
+
+	// Render parameter "a"
+	const Texture * a[ARRAYSIZE(convolution)];
+	m_meanImagesRenderer->RenderA(m_d3dContext.Get(), 
+		convolution_resourceViews, 
+		varianceInputImages_resourceViews,
+		(const Texture*(*)[]) &a, 
+		ARRAYSIZE(convolution));
+	for (int i = 0; i < ARRAYSIZE(convolution); ++i) // We don't need convolutions anymore
+		TexturesBuffer->Free(convolution[i]);
+	ID3D11ShaderResourceView * a_resourceViews[ARRAYSIZE(a)];
+	for (int i = 0; i < ARRAYSIZE(a); ++i)
+		a_resourceViews[i] = a[i]->ResourceView;
+
+	// Render parameter "b"
+	const Texture * b[ARRAYSIZE(a)];
+	m_meanImagesRenderer->RenderB(m_d3dContext.Get(), 
+		meanCostVolumes_resourceViews, 
+		a_resourceViews,
+		meanInputImages_resourceViews[0],
+		(const Texture*(*)[]) &b, 
+		ARRAYSIZE(a));
+	for (int i = 0; i < ARRAYSIZE(meanCostVolumes); ++i) // We don't need mean cost volumes anymore
+		TexturesBuffer->Free(meanCostVolumes[i]);
+	ID3D11ShaderResourceView * b_resourceViews[ARRAYSIZE(b)];
+	for (int i = 0; i < ARRAYSIZE(b); ++i)
+		b_resourceViews[i] = b[i]->ResourceView;
+
+	// Render boxFIlter(a)
+	const Texture * meanA[ARRAYSIZE(a)];
+	m_meanImagesRenderer->RenderSimple(m_d3dContext.Get(), 
+		a_resourceViews, 
+		(const Texture*(*)[]) &meanA, 
+		ARRAYSIZE(a));
+	for (int i = 0; i < ARRAYSIZE(a); ++i) // We don't need convolutions anymore
+		TexturesBuffer->Free(a[i]);
+	ID3D11ShaderResourceView * meanA_resourceViews[ARRAYSIZE(meanA)];
+	for (int i = 0; i < ARRAYSIZE(meanA); ++i)
+		meanA_resourceViews[i] = meanA[i]->ResourceView;
+
+	// Render boxFIlter(b)
+	const Texture * meanB[ARRAYSIZE(b)];
+	m_meanImagesRenderer->RenderSimple(m_d3dContext.Get(), 
+		b_resourceViews, 
+		(const Texture*(*)[]) &meanB, 
+		ARRAYSIZE(b));
+	for (int i = 0; i < ARRAYSIZE(b); ++i) // We don't need convolutions anymore
+		TexturesBuffer->Free(b[i]);
+	ID3D11ShaderResourceView * meanB_resourceViews[ARRAYSIZE(meanB)];
+	for (int i = 0; i < ARRAYSIZE(meanB); ++i)
+		meanB_resourceViews[i] = meanB[i]->ResourceView;
+
+	// Render q
+	const Texture * q[ARRAYSIZE(meanA)];
+	m_meanImagesRenderer->RenderLinear(m_d3dContext.Get(), 
+		meanA_resourceViews, 
+		inputImages[0],
+		meanB_resourceViews, 
+		(const Texture*(*)[]) &q, 
+		ARRAYSIZE(b));
+	for (int i = 0; i < ARRAYSIZE(meanA); ++i) // We don't need convolutions anymore
+		TexturesBuffer->Free(meanA[i]);
+	for (int i = 0; i < ARRAYSIZE(meanB); ++i) // We don't need convolutions anymore
+		TexturesBuffer->Free(meanB[i]);
+
 	ID3D11ShaderResourceView * screenOutput[] = 
 	{
-		convolution[0]->ResourceView,
-		convolution[1]->ResourceView
+		q[0]->ResourceView,
+		q[1]->ResourceView
 	};
 
 	Render(screenOutput);
 
-	for (int i = 0; i < ARRAYSIZE(convolution); ++i)
-		TexturesBuffer->Free(convolution[i]);
-	for (int i = 0; i < ARRAYSIZE(meanCostVolumes); ++i)
-		TexturesBuffer->Free(meanCostVolumes[i]);
-
+	for (int i = 0; i < ARRAYSIZE(q); ++i) // We don't need convolutions anymore
+		TexturesBuffer->Free(q[i]);
 	TexturesBuffer->Free(varianceInputImages[0]);
 	TexturesBuffer->Free(varianceInputImages[1]);
 	TexturesBuffer->Free(varianceInputImages[2]);

@@ -479,6 +479,32 @@ void MeanImagesRenderer::RenderCovariance(ID3D11DeviceContext1 * context,
 	}
 }
 
+void MeanImagesRenderer::RenderLinear(ID3D11DeviceContext * context, 
+									  ID3D11ShaderResourceView * * a, 
+									  ID3D11ShaderResourceView * image, 
+									  ID3D11ShaderResourceView * * b, 
+									  const Texture * (*output)[], 
+									  uint8 count)
+{
+}
+
+void MeanImagesRenderer::RenderA(ID3D11DeviceContext * context, 
+								 ID3D11ShaderResourceView * * convolution, 
+								 ID3D11ShaderResourceView * * variance, 
+								 const Texture * (*output)[], 
+								 uint8 count)
+{
+}
+
+void MeanImagesRenderer::RenderB(ID3D11DeviceContext * context, 
+								 ID3D11ShaderResourceView * * meanD, 
+								 ID3D11ShaderResourceView * * a, 
+								 ID3D11ShaderResourceView * meanImage, 
+								 const Texture * (*output)[], 
+								 uint8 count)
+{
+}
+
 void MeanImagesRenderer::_Render(ID3D11DeviceContext1 * context)
 {
 	static bool clearStencil = true;
