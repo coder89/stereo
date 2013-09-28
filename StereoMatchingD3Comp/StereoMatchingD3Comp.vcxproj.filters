@@ -27,6 +27,9 @@
     <FxCompile Include="MeanCostVolumePixelShaderW.hlsl">
       <Filter>Renderers\Mean Images Renderer</Filter>
     </FxCompile>
+    <FxCompile Include="MultiplyColorAndGrayPixelShader.hlsl">
+      <Filter>Renderers\Common Renderers</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CubeRenderer.cpp" />
@@ -52,6 +55,7 @@
     <ClCompile Include="MeanImagesRenderer.cpp">
       <Filter>Renderers\Mean Images Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="TextureCache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CubeRenderer.h" />
@@ -89,6 +93,7 @@
     <ClInclude Include="MeanImagesRenderer.h">
       <Filter>Renderers\Mean Images Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="TextureCache.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -108,6 +113,9 @@
     </Filter>
     <Filter Include="Renderers\Mean Images Renderer">
       <UniqueIdentifier>{c8a8febb-f613-4414-8433-96c2aa266033}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderers\Common Renderers">
+      <UniqueIdentifier>{c8ae7d64-a5a6-45b8-b948-bb14e12662e4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

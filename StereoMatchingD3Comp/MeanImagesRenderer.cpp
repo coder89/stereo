@@ -18,6 +18,7 @@ Concurrency::task<void> MeanImagesRenderer::_Initialize()
 	auto loadVSTask = DX::ReadDataAsync("MeanImageVertexShader.cso");
 	auto loadPSTask_CV_H = DX::ReadDataAsync("MeanCostVolumePixelShaderH.cso");
 	auto loadPSTask_CV_W = DX::ReadDataAsync("MeanCostVolumePixelShaderW.cso");
+	auto loadPSTask_MUL = DX::ReadDataAsync("MultiplyColorAndGrayPixelShader.cso");
 
 	auto createVSTask = loadVSTask.then([this](Platform::Array<byte>^ fileData) {
 		DX::ThrowIfFailed(
@@ -69,10 +70,22 @@ Concurrency::task<void> MeanImagesRenderer::_Initialize()
 			);
 	});
 
-	auto createTargetTexture = (createPSTask_CV_H && createPSTask_CV_W && createVSTask).then([this] () {
+	auto createPSTask_MUL = loadPSTask_MUL.then([this](Platform::Array<byte>^ fileData) {
+		DX::ThrowIfFailed(
+			m_device->CreatePixelShader(
+			fileData->Data,
+			fileData->Length,
+			nullptr,
+			&m_pixelShader_MUL
+			)
+			);
+	});
 
-		ID3D11Texture2D * subTargets[MAX_DISPARITY / 4 + 2];
-		ID3D11Texture2D * targets[MAX_DISPARITY / 4 + 2];
+	auto createTargetTexture = (createPSTask_MUL && createPSTask_CV_H && createPSTask_CV_W && createVSTask).then([this] () {
+
+		const int count = 2 + MAX_DISPARITY + MAX_DISPARITY + MAX_DISPARITY / 4;
+		ID3D11Texture2D * subTargets[count];
+		ID3D11Texture2D * targets[count];
 
 		ID3D11Texture2D * renderTarget = 0;
 		D3D11_TEXTURE2D_DESC desc;
@@ -89,7 +102,7 @@ Concurrency::task<void> MeanImagesRenderer::_Initialize()
 		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
 
-		for (int i = 0; i < MAX_DISPARITY / 4 + 2; ++i)
+		for (int i = 0; i < count; ++i)
 		{
 			DX::ThrowIfFailed(
 				m_device->CreateTexture2D(
@@ -110,8 +123,8 @@ Concurrency::task<void> MeanImagesRenderer::_Initialize()
 			subTargets[i] = renderTarget;
 		}
 
-		this->SetTargetResource(MAX_DISPARITY / 4 + 2, targets, DXGI_FORMAT_R32G32B32A32_FLOAT);
-		this->SetIntermediateTargetResource(1, MAX_DISPARITY / 4 + 2, subTargets, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		this->SetTargetResource(count, targets, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		this->SetIntermediateTargetResource(1, count, subTargets, DXGI_FORMAT_R32G32B32A32_FLOAT);
 	});
 
 	auto createScene = (createTargetTexture).then([this] () {
@@ -269,7 +282,7 @@ void MeanImagesRenderer::_RenderImages(ID3D11DeviceContext1 * context)
 
 void MeanImagesRenderer::_RenderCostVolumes(ID3D11DeviceContext1 * context)
 {
-	for (int i = 2; i < m_resultsCount[0]; i+=2)
+	for (int i = 2; i < 2 + MAX_DISPARITY / 4; i+=2)
 	{
 		ID3D11ShaderResourceView * textures[] = 
 		{
@@ -332,23 +345,24 @@ void MeanImagesRenderer::_RenderCostVolumes(ID3D11DeviceContext1 * context)
 
 void MeanImagesRenderer::_RenderImageCostVolumes(ID3D11DeviceContext1 * context)
 {
-	for (int i = 2; i < m_resultsCount[0]; i+=2)
+	context->PSSetShader(
+		m_pixelShader_MUL.Get(),
+		nullptr,
+		0
+		);
+	
+	ComPtr<ID3D11ShaderResourceView> * tmp = m_costVolume;
+	for (int i = 0; i < MAX_DISPARITY / 4; ++i)
 	{
 		ID3D11ShaderResourceView * textures[] = 
 		{
-			m_costVolume[i-2].Get(),
-			m_costVolume[i-1].Get()
+			m_textureLeftView.Get(),
+			m_costVolume[i].Get()
 		};
-
-		context->PSSetShader(
-			m_pixelShader_CV_H.Get(),
-			nullptr,
-			0
-			);
 
 		context->OMSetRenderTargets(
 			2,
-			this->GetIntermediateRenderTargets(1) + i,
+			this->GetRenderTargets() + i + 2 + MAX_DISPARITY / 4,
 			0//m_depthStencilView.Get()			// This increases performance!
 			);
 
@@ -363,19 +377,20 @@ void MeanImagesRenderer::_RenderImageCostVolumes(ID3D11DeviceContext1 * context)
 			0,
 			0
 			);
-
-		context->PSSetShader(
-			m_pixelShader_CV_W.Get(),
-			nullptr,
-			0
-			);
-
-		textures[0] = this->GetShaderResourceTargets(1)[0+i];
-		textures[1] = this->GetShaderResourceTargets(1)[1+i];
+	}
+	
+	ComPtr<ID3D11ShaderResourceView> * tmp2 = m_costVolume;
+	for (int i = 0; i < MAX_DISPARITY / 4; ++i)
+	{
+		ID3D11ShaderResourceView * textures[] = 
+		{
+			m_textureRightView.Get(),
+			m_costVolume[i].Get()
+		};
 
 		context->OMSetRenderTargets(
 			2,
-			this->GetRenderTargets() + i,
+			this->GetRenderTargets() + i + 2 + MAX_DISPARITY / 2,
 			0//m_depthStencilView.Get()			// This increases performance!
 			);
 
@@ -445,4 +460,5 @@ void MeanImagesRenderer::_Render(ID3D11DeviceContext1 * context)
 
 	this->_RenderImages(context);
 	this->_RenderCostVolumes(context);
+	//this->_RenderImageCostVolumes(context);
 }

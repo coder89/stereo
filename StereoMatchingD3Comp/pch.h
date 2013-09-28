@@ -24,4 +24,5 @@
 #include <string>
 #include <set>
 
+#include "TextureCache.h"
 #include "AbstractProcessingStage.h"

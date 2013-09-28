@@ -194,75 +194,35 @@ void CostVolumeRenderer::_Render(ID3D11DeviceContext1 * context)
 	};
 	
 
-	context->PSSetShaderResources(
-		0, 
-		2,
-		textures
-		);
+	context->PSSetShaderResources(0, 2, textures);
 
 	if (clearStencil) 
 	{
 		for (int i = 0; i < m_resultsCount[0]; ++i)
 		{
-			context->ClearRenderTargetView(
-				m_resultTargetView[0][i],
-				midnightBlue
-				);
+			context->ClearRenderTargetView(m_resultTargetView[0][i], midnightBlue);
 		}
 
 		UINT stride = sizeof(VertexPositionColor);
 		UINT offset = 0;
-		context->IASetVertexBuffers(
-			0,
-			1,
-			m_vertexBuffer.GetAddressOf(),
-			&stride,
-			&offset
-			);
-
-		context->IASetIndexBuffer(
-			m_indexBuffer.Get(),
-			DXGI_FORMAT_R16_UINT,
-			0
-			);
+		context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+		context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
 		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		context->IASetInputLayout(m_inputLayout.Get());
 
-		context->VSSetShader(
-			m_vertexShader.Get(),
-			nullptr,
-			0
-			);
-
-		context->PSSetSamplers(
-			0, 
-			1, 
-			m_sampler.GetAddressOf()
-			);
+		context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+		context->PSSetSamplers(0, 1, m_sampler.GetAddressOf());
 
 		clearStencil = false;
 	}
 
-	context->PSSetShader(
-		m_pixelShader.Get(),
-		nullptr,
-		0
-		);
+	context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
 	for (int i = 0; i < m_resultsCount[0]; i+=4)
 	{
-		context->OMSetRenderTargets(
-			4,
-			this->GetRenderTargets() + i,
-			0//m_depthStencilView.Get()			// This increases performance!
-			);
-
-		context->DrawIndexed(
-			m_indexCount,
-			0,
-			0
-			);
+		context->OMSetRenderTargets(4, this->GetRenderTargets() + i, 0);
+		context->DrawIndexed(m_indexCount, 0, 0);
 	}
 }

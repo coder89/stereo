@@ -35,14 +35,14 @@ namespace StereoMatchingD3
 
                 // Set window bounds in dips
                 m_d3dInterop.WindowBounds = new Windows.Foundation.Size(
-                    (float)900,//DrawingSurface.ActualWidth,
-                    (float)750//DrawingSurface.ActualHeight
+                    (float)450,//DrawingSurface.ActualWidth,
+                    (float)375//DrawingSurface.ActualHeight
                     );
 
                 // Set native resolution in pixels
                 m_d3dInterop.NativeResolution = new Windows.Foundation.Size(
-                    (float)900,//Math.Floor(DrawingSurface.ActualWidth * Application.Current.Host.Content.ScaleFactor / 100.0f + 0.5f),
-                    (float)750//Math.Floor(DrawingSurface.ActualHeight * Application.Current.Host.Content.ScaleFactor / 100.0f + 0.5f)
+                    (float)450,//Math.Floor(DrawingSurface.ActualWidth * Application.Current.Host.Content.ScaleFactor / 100.0f + 0.5f),
+                    (float)375//Math.Floor(DrawingSurface.ActualHeight * Application.Current.Host.Content.ScaleFactor / 100.0f + 0.5f)
                     );
 
                 // Set render resolution to the full native resolution

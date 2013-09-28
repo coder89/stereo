@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Direct3DBase.h"
 #include "Config.h"
 

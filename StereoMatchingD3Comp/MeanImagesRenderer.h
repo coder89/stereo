@@ -46,9 +46,7 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_CV_H;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_CV_W;
-
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_ICV_H;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_ICV_W;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_MUL;
 	
 	uint32 m_indexCount;
 	uint32 m_vertexCount;

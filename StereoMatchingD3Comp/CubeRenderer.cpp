@@ -9,7 +9,7 @@ using namespace Windows::Foundation;
 using namespace Windows::ApplicationModel;
 using namespace Windows::UI::Core;
 
-ConstantParameters * ConstantParametersBuffer = new ConstantParameters(9, 0.0001f, 0.9f, 9, 0.1f, 0.028f, 0.008f);
+ConstantParameters * ConstantParametersBuffer = new ConstantParameters(12, 0.0001f, 0.9f, 9, 0.1f, 0.028f, 0.008f);
 
 CubeRenderer::CubeRenderer() :
 	m_indexCount(0),
@@ -21,16 +21,20 @@ void CubeRenderer::CreateDeviceResources()
 {
 	Direct3DBase::CreateDeviceResources();
 
-	m_costVolumeRenderer = new CostVolumeRenderer(m_d3dDevice.Get(), Size(900, 750));
-	m_meanImagesRenderer = new MeanImagesRenderer(m_d3dDevice.Get(), Size(900, 750));
+	TextureCache * textureCache = TextureCache::Instance(m_renderTargetSize, m_d3dDevice.Get());
+	m_costVolumeRenderer = new CostVolumeRenderer(m_d3dDevice.Get(), Size(450, 375));
 
+
+	//m_meanImagesRenderer = new MeanImagesRenderer(m_d3dDevice.Get(), Size(450, 375));
+	
+	auto initTexturesCache = TexturesBuffer->InitializeAsync();
 	auto initCVRenderer = m_costVolumeRenderer->Initialize();
-	auto initMIRenderer = m_meanImagesRenderer->Initialize();
+	//auto initMIRenderer = m_meanImagesRenderer->Initialize();
 
 	auto loadVSTask = DX::ReadDataAsync("SimpleVertexShader.cso");
 	auto loadPSTask = DX::ReadDataAsync("ToScreenPixelShader.cso");
-	auto loadTX1Task = DX::ReadDataAsync("Media\\textures\\im2_medium.dds");
-	auto loadTX2Task = DX::ReadDataAsync("Media\\textures\\im6_medium.dds");
+	auto loadTX1Task = DX::ReadDataAsync("Media\\textures\\im2_low.dds");
+	auto loadTX2Task = DX::ReadDataAsync("Media\\textures\\im6_low.dds");
 
 	auto createVSTask = loadVSTask.then([this](Platform::Array<byte>^ fileData) {
 
@@ -70,15 +74,6 @@ void CubeRenderer::CreateDeviceResources()
 			&m_pixelShader
 			)
 			);
-
-		//CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
-		//DX::ThrowIfFailed(
-		//	m_d3dDevice->CreateBuffer(
-		//	&constantBufferDesc,
-		//	nullptr,
-		//	&m_constantBuffer
-		//	)
-		//	);
 
 		CD3D11_BUFFER_DESC constantParametersBufferDesc(sizeof(ConstantParameters), D3D11_BIND_CONSTANT_BUFFER);
 		DX::ThrowIfFailed(
@@ -136,13 +131,13 @@ void CubeRenderer::CreateDeviceResources()
 			);
 	});
 
-	auto setInputImages = (createTX1Task && createTX2Task && initCVRenderer && initMIRenderer).then([this] () {
+	auto setInputImages = (initTexturesCache && createTX1Task && createTX2Task && initCVRenderer).then([this] () {
 
 		ConstantParametersBuffer->dx = 1.0f / m_renderTargetSize.Width;
 		ConstantParametersBuffer->dy = 1.0f / m_renderTargetSize.Height;
 
 		m_costVolumeRenderer->SetStereoTexture(m_texture1View.Get(), m_texture2View.Get());
-		m_meanImagesRenderer->SetStereoTexture(m_texture1View.Get(), m_texture2View.Get());
+		//m_meanImagesRenderer->SetStereoTexture(m_texture1View.Get(), m_texture2View.Get());
 
 		// create the sampler
 		D3D11_SAMPLER_DESC samplerDesc;
@@ -230,37 +225,10 @@ void CubeRenderer::CreateWindowSizeDependentResources()
 	{
 		fovAngleY /= aspectRatio;
 	}
-
-	/*XMStoreFloat4x4(
-	&m_constantBufferData.projection,
-	XMMatrixTranspose(
-	XMMatrixPerspectiveFovRH(
-	fovAngleY,
-	aspectRatio,
-	0.01f,
-	100.0f
-	)
-	)
-	);
-
-	XMVECTOR eye = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	XMVECTOR at = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
-	XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixIdentity());*/// XMMatrixTranspose(XMMatrixRotationY(timeTotal * XM_PIDIV4)));
 }
 
 void CubeRenderer::Update(float timeTotal, float timeDelta)
 {
-	(void) timeDelta; // Unused parameter.
-
-	//XMVECTOR eye = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	//XMVECTOR at = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-	//XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-	//XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
-	//XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixIdentity()); XMMatrixTranspose(XMMatrixRotationY(timeTotal * XM_PIDIV4)));
 }
 
 void CubeRenderer::Render()
@@ -288,10 +256,10 @@ void CubeRenderer::Render()
 
 	m_costVolumeRenderer->Render(m_d3dContext.Get());
 
-	m_meanImagesRenderer->SetCostVolume(m_costVolumeRenderer->GetResultViews(), MAX_DISPARITY / 4);
-	m_meanImagesRenderer->Render(m_d3dContext.Get());
+	//m_meanImagesRenderer->SetCostVolume(m_costVolumeRenderer->GetResultViews(), MAX_DISPARITY / 4);
+	//m_meanImagesRenderer->Render(m_d3dContext.Get());
 
-	Render(m_meanImagesRenderer->GetResultViews());
+	Render(m_costVolumeRenderer->GetResultViews());
 }
 
 void CubeRenderer::Render(ID3D11ShaderResourceView * * resource)
