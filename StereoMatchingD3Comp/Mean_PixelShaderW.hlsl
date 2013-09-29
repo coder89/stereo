@@ -36,25 +36,31 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET
     output.cost1 = float4(0,0,0,0);
     output.cost4 = float4(0,0,0,0);
 
-    float2 tmp = input.tex - float2(0.0f, r * dy);
-    [unroll(20)]
-    for (int i = -r; i <= r; ++i)
+    float2 tmp = input.tex - float2(0.0f, 9.0f * dy);
+    for (int i = -9; i <= 9; ++i)
     {
         tmp.y += dy;
         output.cost1 += Texture[0].Sample(Sampler, tmp);
     }
     
-    tmp = input.tex - float2(0.0f, r * dy);
-    [unroll(20)]
-    for (int i = -r; i <= r; ++i)
+    tmp = input.tex - float2(0.0f, 9.0f * dy);
+    for (int i = -9; i <= 9; ++i)
     {
         tmp.y += dy;
         output.cost4 += Texture[1].Sample(Sampler, tmp);
     }
     
-    float W = 2 * r + 1;
-    output.cost1 /= float4(W,W,W,W);
-    output.cost4 /= float4(W,W,W,W);
+    float W = 19.0f;
+
+    output.cost1[0] = output.cost1[0] / W;
+    output.cost1[1] = output.cost1[1] / W;
+    output.cost1[2] = output.cost1[2] / W;
+    output.cost1[3] = output.cost1[3] / W;
+
+    output.cost4[0] = output.cost1[0] / W;
+    output.cost4[1] = output.cost1[1] / W;
+    output.cost4[2] = output.cost1[2] / W;
+    output.cost4[3] = output.cost1[3] / W;
 
     return output;
 }

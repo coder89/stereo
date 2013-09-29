@@ -118,9 +118,9 @@ Concurrency::task<void> CostVolumeRenderer::_Initialize()
         // create the sampler
         D3D11_SAMPLER_DESC samplerDesc;
         samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-        samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-        samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-        samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR;
+        samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR;
+        samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR;
         samplerDesc.MipLODBias = 0;
         samplerDesc.MaxAnisotropy = 0;
         samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;

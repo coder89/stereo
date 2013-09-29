@@ -9,7 +9,7 @@ using namespace Windows::Foundation;
 using namespace Windows::ApplicationModel;
 using namespace Windows::UI::Core;
 
-ConstantParameters * ConstantParametersBuffer = new ConstantParameters(12, 0.0001f, 0.9f, 9, 0.1f, 0.028f, 0.008f);
+ConstantParameters * ConstantParametersBuffer = new ConstantParameters(12, 0.0001f, 0.11f, 9, 0.1f, 0.0275f, 0.0078f);
 
 CubeRenderer::CubeRenderer() :
 	m_indexCount(0),
@@ -22,9 +22,9 @@ void CubeRenderer::CreateDeviceResources()
 {
 	Direct3DBase::CreateDeviceResources();
 
-	TextureCache * textureCache = TextureCache::Instance(Size(450, 375), m_d3dDevice.Get());
-	m_costVolumeRenderer = new CostVolumeRenderer(m_d3dDevice.Get(), Size(450, 375));
-	m_meanImagesRenderer = new MeanImagesRenderer(m_d3dDevice.Get(), Size(450, 375));
+	TextureCache * textureCache = TextureCache::Instance(Size(384, 288), m_d3dDevice.Get());
+	m_costVolumeRenderer = new CostVolumeRenderer(m_d3dDevice.Get(), Size(384, 288));
+	m_meanImagesRenderer = new MeanImagesRenderer(m_d3dDevice.Get(), Size(384, 288));
 
 	auto initTexturesCache = TexturesBuffer->InitializeAsync().then([this] () 
 	{
@@ -34,8 +34,8 @@ void CubeRenderer::CreateDeviceResources()
 			{
 				auto loadVSTask = DX::ReadDataAsync("SimpleVertexShader.cso");
 				auto loadPSTask = DX::ReadDataAsync("ToScreenPixelShader.cso");
-				auto loadTX1Task = DX::ReadDataAsync("Media\\textures\\im2_low.dds");
-				auto loadTX2Task = DX::ReadDataAsync("Media\\textures\\im6_low.dds");
+				auto loadTX1Task = DX::ReadDataAsync("Media\\textures\\left.dds");
+				auto loadTX2Task = DX::ReadDataAsync("Media\\textures\\right.dds");
 
 				auto createVSTask = loadVSTask.then([this](Platform::Array<byte>^ fileData) {
 
@@ -264,36 +264,17 @@ void CubeRenderer::Render()
 	ID3D11ShaderResourceView * meanInputImages_resourceViews[ARRAYSIZE(meanInputImages)];
 	for (int i = 0; i < ARRAYSIZE(meanInputImages); ++i)
 		meanInputImages_resourceViews[i] = meanInputImages[i]->ResourceView;
-	{
-		ID3D11ShaderResourceView * screenOutput[] = 
-		{
-			meanInputImages[0]->ResourceView,
-			meanInputImages[1]->ResourceView
-		};
-		Render(screenOutput);
-		//goto free_meanInputImages;
-	}
 
 	// Render variance images (eq. no. 5)
 	const Texture * varianceInputImages[ARRAYSIZE(inputImages) * 2];
 	m_meanImagesRenderer->RenderVariance(m_d3dContext.Get(), 
 		inputImages, 
-		meanInputImages, 
+		meanInputImages_resourceViews, 
 		(const Texture*(*)[]) &varianceInputImages, 
 		ARRAYSIZE(inputImages));
 	ID3D11ShaderResourceView * varianceInputImages_resourceViews[ARRAYSIZE(varianceInputImages)];
 	for (int i = 0; i < ARRAYSIZE(varianceInputImages); ++i)
 		varianceInputImages_resourceViews[i] = varianceInputImages[i]->ResourceView;
-	{
-		ID3D11ShaderResourceView * screenOutput[] = 
-		{
-			varianceInputImages[0]->ResourceView,
-			varianceInputImages[1]->ResourceView
-		};
-		Render(screenOutput);
-		goto free_varianceInputImages;
-	}
-
 	// Render cost volumes for input images
 	const Texture * costVolumes[MAX_DISPARITY / 4];
 	m_costVolumeRenderer->RenderCostVolumes(m_d3dContext.Get(), 
@@ -303,14 +284,6 @@ void CubeRenderer::Render()
 	ID3D11ShaderResourceView * costVolumes_resourceViews[ARRAYSIZE(costVolumes)];
 	for (int i = 0; i < ARRAYSIZE(costVolumes_resourceViews); ++i)
 		costVolumes_resourceViews[i] = costVolumes[i]->ResourceView;
-	{
-		ID3D11ShaderResourceView * screenOutput[] = 
-		{
-			costVolumes[0]->ResourceView,
-			costVolumes[1]->ResourceView
-		};
-		Render(screenOutput);
-	}
 
 	// Render mean textures for cost volumes (eq. no. 2)
 	const Texture * meanCostVolumes[ARRAYSIZE(costVolumes)];
@@ -321,14 +294,6 @@ void CubeRenderer::Render()
 	ID3D11ShaderResourceView * meanCostVolumes_resourceViews[ARRAYSIZE(meanCostVolumes)];
 	for (int i = 0; i < ARRAYSIZE(meanCostVolumes); ++i)
 		meanCostVolumes_resourceViews[i] = meanCostVolumes[i]->ResourceView;
-	{
-		ID3D11ShaderResourceView * screenOutput[] = 
-		{
-			meanCostVolumes[0]->ResourceView,
-			meanCostVolumes[1]->ResourceView
-		};
-		Render(screenOutput);
-	}
 
 	// Render mean textures for images multiplied by cost volumes (eq. no. 3)
 	const Texture * meanImageCostVolumes[ARRAYSIZE(costVolumes_resourceViews) * 4];
@@ -342,14 +307,6 @@ void CubeRenderer::Render()
 		meanImageCostVolumes_resourceViews[i] = meanImageCostVolumes[i]->ResourceView;
 	for (int i = 0; i < ARRAYSIZE(costVolumes); ++i) // We don't need cost volumes anymore
 		TexturesBuffer->Free(costVolumes[i]);
-	{
-		ID3D11ShaderResourceView * screenOutput[] = 
-		{
-			meanImageCostVolumes[0]->ResourceView,
-			meanImageCostVolumes[1]->ResourceView
-		};
-		Render(screenOutput);
-	}
 
 	// Render covariance textures (eq. no. 4)
 	const Texture * convolution[ARRAYSIZE(meanImageCostVolumes)];
@@ -364,15 +321,6 @@ void CubeRenderer::Render()
 		convolution_resourceViews[i] = convolution[i]->ResourceView;
 	for (int i = 0; i < ARRAYSIZE(meanImageCostVolumes); ++i) // We don't need images multiplied by cost volumes anymore
 		TexturesBuffer->Free(meanImageCostVolumes[i]);
-	{
-		ID3D11ShaderResourceView * screenOutput[] = 
-		{
-			convolution[0]->ResourceView,
-			convolution[1]->ResourceView
-		};
-		Render(screenOutput);
-	}
-
 
 	// Render parameter "a"
 	const Texture * a[ARRAYSIZE(convolution)];
@@ -392,11 +340,12 @@ void CubeRenderer::Render()
 			a[0]->ResourceView,
 			a[1]->ResourceView
 		};
-		Render(screenOutput);
+		//Render(screenOutput);
+		//goto free_varianceInputImages;
 	}
 
 	// Render parameter "b"
-	const Texture * b[ARRAYSIZE(a)];
+	const Texture * b[ARRAYSIZE(a) / 4];
 	m_meanImagesRenderer->RenderB(m_d3dContext.Get(), 
 		meanCostVolumes_resourceViews, 
 		a_resourceViews,
@@ -414,7 +363,8 @@ void CubeRenderer::Render()
 			b[0]->ResourceView,
 			b[1]->ResourceView
 		};
-		Render(screenOutput);
+		//Render(screenOutput);
+		//goto free_varianceInputImages;
 	}
 
 	// Render boxFIlter(a)
@@ -434,7 +384,7 @@ void CubeRenderer::Render()
 			meanA[0]->ResourceView,
 			meanA[1]->ResourceView
 		};
-		Render(screenOutput);
+		//Render(screenOutput);
 	}
 
 	// Render boxFIlter(b)
@@ -454,33 +404,52 @@ void CubeRenderer::Render()
 			meanB[0]->ResourceView,
 			meanB[1]->ResourceView
 		};
-		Render(screenOutput);
+		//Render(screenOutput);
 	}
 
 	// Render q
-	const Texture * q[ARRAYSIZE(meanA)];
+	const Texture * q[ARRAYSIZE(meanB)];
 	m_meanImagesRenderer->RenderQ(m_d3dContext.Get(), 
 		meanA_resourceViews, 
 		inputImages[0],
 		meanB_resourceViews, 
 		(const Texture*(*)[]) &q, 
-		ARRAYSIZE(b));
+		ARRAYSIZE(b));	
+	ID3D11ShaderResourceView * q_resourceViews[ARRAYSIZE(meanB)];
+	for (int i = 0; i < ARRAYSIZE(q); ++i)
+		q_resourceViews[i] = q[i]->ResourceView;
 	{
 		ID3D11ShaderResourceView * screenOutput[] = 
 		{
 			q[0]->ResourceView,
 			q[1]->ResourceView
 		};
-		Render(screenOutput);
+		//Render(screenOutput);
 	}
 
 	for (int i = 0; i < ARRAYSIZE(meanA); ++i) // We don't need convolutions anymore
 		TexturesBuffer->Free(meanA[i]);
 	for (int i = 0; i < ARRAYSIZE(meanB); ++i) // We don't need convolutions anymore
 		TexturesBuffer->Free(meanB[i]);
-	for (int i = 0; i < ARRAYSIZE(q); ++i) // We don't need convolutions anymore
-		TexturesBuffer->Free(q[i]);
+
+	const Texture * disparity[ARRAYSIZE(q) / 4];
+	m_meanImagesRenderer->RenderDisparity(m_d3dContext.Get(), 
+		q_resourceViews, 
+		(const Texture*(*)[]) &disparity, 
+		ARRAYSIZE(q));	
+	{
+		ID3D11ShaderResourceView * screenOutput[] = 
+		{
+			disparity[0]->ResourceView
+		};
+		Render(screenOutput);
+	}	
 	
+	for (int i = 0; i < ARRAYSIZE(q); ++i) // We don't need convolutions anymore
+		TexturesBuffer->Free(q[i]);	
+	for (int i = 0; i < ARRAYSIZE(disparity); ++i) // We don't need convolutions anymore
+		TexturesBuffer->Free(disparity[i]);
+
 free_varianceInputImages:
 	TexturesBuffer->Free(varianceInputImages[0]);
 	TexturesBuffer->Free(varianceInputImages[1]);

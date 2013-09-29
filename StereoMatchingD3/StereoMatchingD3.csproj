@@ -138,6 +138,12 @@
     </Content>
     <Content Include="Media\textures\temp2.dds" />
     <Content Include="Media\textures\temp.dds" />
+    <Content Include="Media\textures\temp_right.dds" />
+    <Content Include="Media\textures\temp_left.dds" />
+    <Content Include="Media\textures\left.dds" />
+    <Content Include="Media\textures\right.dds" />
+    <Content Include="Media\textures\art_right.dds" />
+    <Content Include="Media\textures\art_left.dds" />
     <None Include="Properties\AppManifest.xml" />
     <None Include="Properties\WMAppManifest.xml">
       <SubType>Designer</SubType>

@@ -47,7 +47,7 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET0
 	{
 		for (int j = 0; j < 4; ++j)
 		{
-			float2 dispTex = input.tex - float2(dx * (input.disparity * i + j), 0.0f);
+			float2 dispTex = input.tex - float2(dx * (input.disparity), 0.0f);
 			float4 px0_right = Textures[1].Sample(Sampler, dispTex - float2(dx, 0.0f));
 			float4 px1_right = Textures[1].Sample(Sampler, dispTex);
 			float4 px2_right = Textures[1].Sample(Sampler, dispTex + float2(dx, 0.0f));
@@ -65,6 +65,8 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET0
 			float tC = alpha * min(Tc, M) + (1 - alpha) * min(Tg, G);
 		
 			C[i][j] = tC;
+
+			input.disparity += 1.0f;
 		}
 	}
 

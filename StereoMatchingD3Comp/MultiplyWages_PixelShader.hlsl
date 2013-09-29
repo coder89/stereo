@@ -36,10 +36,10 @@ struct PixelShaderOutput
 PixelShaderOutput main(PixelShaderInput input) : SV_TARGET
 {
     PixelShaderOutput output;
-    output.cost1 = float4(0,0,0,1);
-    output.cost4 = float4(0,0,0,1);
-    output.cost8 = float4(0,0,0,1);
-    output.cost12 = float4(0,0,0,1);
+    output.cost1 = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    output.cost4 = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    output.cost8 = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    output.cost12 = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
     float4 I1 = TextureImage.Sample(Sampler, input.tex);
     float4 I2 = TextureWages.Sample(Sampler, input.tex);

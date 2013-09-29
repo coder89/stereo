@@ -20,7 +20,12 @@ public:
 
 	// Sets cost volume textures
 	void SetCostVolume(ID3D11ShaderResourceView * * costVolume, uint8 count);
-	
+
+	void RenderDisparity(ID3D11DeviceContext1 * context, 
+						ID3D11ShaderResourceView * * q, 
+						const Texture * (*output)[], 
+						uint8 count);
+
 	/* Render mean image for all input images.
 	 * Caller is responsible for releasing shader resource handlers.
 	 */
@@ -46,7 +51,7 @@ public:
 	 */
 	void RenderVariance(ID3D11DeviceContext1* context, 
 						ID3D11ShaderResourceView * * images, 
-						const Texture * * meanImages, 
+						ID3D11ShaderResourceView * * meanImages, 
 						const Texture * (*output)[], 
 						uint8 count);
 	
@@ -115,7 +120,8 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Mean_H;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Mean_W;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_MultiplyChannels;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Disparity;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_MultiplyWages;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_MixChannels;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Covariance;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Variance;

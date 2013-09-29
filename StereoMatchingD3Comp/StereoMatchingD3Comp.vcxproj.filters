@@ -52,6 +52,9 @@
     <FxCompile Include="Q_PixelShader.hlsl">
       <Filter>Renderers\Image Statistic Renderer</Filter>
     </FxCompile>
+    <FxCompile Include="Disparity_PixelShader.hlsl">
+      <Filter>Renderers\Image Statistic Renderer</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CostVolumeRenderer.cpp">
