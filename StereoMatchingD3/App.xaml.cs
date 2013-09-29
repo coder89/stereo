@@ -55,6 +55,7 @@ namespace StereoMatchingD3
                 PhoneApplicationService.Current.UserIdleDetectionMode = IdleDetectionMode.Disabled;
             }
 
+            PhoneApplicationService.Current.UserIdleDetectionMode = IdleDetectionMode.Disabled;
         }
 
         // Code to execute when the application is launching (eg, from Start)

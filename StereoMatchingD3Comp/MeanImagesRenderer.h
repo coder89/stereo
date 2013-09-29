@@ -65,7 +65,7 @@ public:
 	 * and 'image' is a constant
 	 * Caller is responsible for releasing shader resource handlers.
 	 */
-	void RenderLinear(ID3D11DeviceContext * context, 
+	void RenderQ(ID3D11DeviceContext * context, 
 						ID3D11ShaderResourceView * * a, 
 						ID3D11ShaderResourceView * image, 
 						ID3D11ShaderResourceView * * b, 
@@ -119,6 +119,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_MixChannels;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Covariance;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Variance;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_A;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_B;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Q;
 	
 	uint32 m_indexCount;
 	uint32 m_vertexCount;

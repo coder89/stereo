@@ -45,6 +45,9 @@ Concurrency::task<void> MeanImagesRenderer::_Initialize()
 	auto createPSTask_Covariance = ShadersLoader::LoadPS("Covariance_PixelShader.cso", m_device.Get(), &m_pixelShader_Covariance);
 	auto createPSTask_Variance = ShadersLoader::LoadPS("Variance_PixelShader.cso", m_device.Get(), &m_pixelShader_Variance);
 	auto createPSTask_MultiplyChannels = ShadersLoader::LoadPS("MultiplyWages_PixelShader.cso", m_device.Get(), &m_pixelShader_MultiplyChannels);
+	auto createPSTask_A = ShadersLoader::LoadPS("A_PixelShader.cso", m_device.Get(), &m_pixelShader_A);
+	auto createPSTask_B = ShadersLoader::LoadPS("B_PixelShader.cso", m_device.Get(), &m_pixelShader_B);
+	auto createPSTask_Q = ShadersLoader::LoadPS("Q_PixelShader.cso", m_device.Get(), &m_pixelShader_Q);
 
 	auto createScene = (createVSTask && 
 						createPSTask_Mean_H && 
@@ -52,7 +55,10 @@ Concurrency::task<void> MeanImagesRenderer::_Initialize()
 						createPSTask_MixChannels && 
 						createPSTask_Covariance && 
 						createPSTask_Variance && 
-						createPSTask_MultiplyChannels)
+						createPSTask_MultiplyChannels && 
+						createPSTask_A && 
+						createPSTask_B && 
+						createPSTask_Q)
 		.then([this] () {
 
 			// Create surface
@@ -479,23 +485,115 @@ void MeanImagesRenderer::RenderCovariance(ID3D11DeviceContext1 * context,
 	}
 }
 
-void MeanImagesRenderer::RenderLinear(ID3D11DeviceContext * context, 
-									  ID3D11ShaderResourceView * * a, 
+void MeanImagesRenderer::RenderQ(ID3D11DeviceContext * context, 
+									  ID3D11ShaderResourceView * * meanA, 
 									  ID3D11ShaderResourceView * image, 
-									  ID3D11ShaderResourceView * * b, 
+									  ID3D11ShaderResourceView * * meanB, 
 									  const Texture * (*output)[], 
 									  uint8 count)
 {
+	ID3D11RenderTargetView * resultRenderTargets[4];
+
+	ID3D11ShaderResourceView * shaderResourceViews1[1];
+	shaderResourceViews1[0] = image;
+	ID3D11ShaderResourceView * shaderResourceViews2[4];
+	ID3D11ShaderResourceView * shaderResourceViews3[4];
+
+	UINT stride = sizeof(VertexPosition);
+	UINT offset = 0;
+	context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+	context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->IASetInputLayout(m_inputLayout.Get());
+	context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+	context->PSSetSamplers(0, 1, m_sampler.GetAddressOf());
+	context->PSSetShader(m_pixelShader_Q.Get(), nullptr, 0);
+
+	for (int i = 0; i < count; i += 4)
+	{
+		shaderResourceViews2[0] = meanA[i];
+		shaderResourceViews2[1] = meanA[i + 1];
+		shaderResourceViews2[2] = meanA[i + 2];
+		shaderResourceViews2[3] = meanA[i + 3];
+
+		shaderResourceViews3[0] = meanB[i];
+		shaderResourceViews3[1] = meanB[i + 1];
+		shaderResourceViews3[2] = meanB[i + 2];
+		shaderResourceViews3[3] = meanB[i + 3];
+
+		resultRenderTargets[0] = ((*output)[i] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[1] = ((*output)[i + 1] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[2] = ((*output)[i + 2] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[3] = ((*output)[i + 3] = TexturesBuffer->Alloc())->RenderTarget;
+
+		context->OMSetRenderTargets(4, resultRenderTargets, 0);
+		context->PSSetShaderResources(0, 1, shaderResourceViews1);
+		context->PSSetShaderResources(1, 4, shaderResourceViews2);
+		context->PSSetShaderResources(2, 4, shaderResourceViews3);
+		context->DrawIndexed(m_indexCount, 0, 0);
+	}
+
+	context->PSSetShaderResources(1, 0, nullptr);
+	context->PSSetShaderResources(2, 0, nullptr);
 }
 
+/* Input:
+ *   N x convolution texture
+ *   2 x variance textures
+ * Output:
+ *   N x 'a' texture
+ */
 void MeanImagesRenderer::RenderA(ID3D11DeviceContext * context, 
 								 ID3D11ShaderResourceView * * convolution, 
 								 ID3D11ShaderResourceView * * variance, 
 								 const Texture * (*output)[], 
 								 uint8 count)
 {
+	ID3D11RenderTargetView * resultRenderTargets[4];
+
+	ID3D11ShaderResourceView * shaderResourceViews1[2];
+	shaderResourceViews1[0] = variance[0];
+	shaderResourceViews1[1] = variance[1];
+	ID3D11ShaderResourceView * shaderResourceViews2[4];
+
+	UINT stride = sizeof(VertexPosition);
+	UINT offset = 0;
+	context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+	context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->IASetInputLayout(m_inputLayout.Get());
+	context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+	context->PSSetSamplers(0, 1, m_sampler.GetAddressOf());
+	context->PSSetShader(m_pixelShader_A.Get(), nullptr, 0);
+	context->PSSetShaderResources(0, 2, shaderResourceViews1);
+
+	for (int i = 0; i < count; i += 4)
+	{
+		shaderResourceViews2[0] = convolution[i];
+		shaderResourceViews2[1] = convolution[i + 1];
+		shaderResourceViews2[2] = convolution[i + 2];
+		shaderResourceViews2[3] = convolution[i + 3];
+
+		resultRenderTargets[0] = ((*output)[i] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[1] = ((*output)[i + 1] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[2] = ((*output)[i + 2] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[3] = ((*output)[i + 3] = TexturesBuffer->Alloc())->RenderTarget;
+
+		context->OMSetRenderTargets(4, resultRenderTargets, 0);
+		context->PSSetShaderResources(1, 4, shaderResourceViews2);
+		context->DrawIndexed(m_indexCount, 0, 0);
+	}
+
+	context->PSSetShaderResources(1, 0, nullptr);
 }
 
+/* Input:
+ *   N x boxFilter(d)
+ *   N x 'a' texture
+ *   1 x mean image
+ * Output:
+ *   N x 'b' texture
+ */
 void MeanImagesRenderer::RenderB(ID3D11DeviceContext * context, 
 								 ID3D11ShaderResourceView * * meanD, 
 								 ID3D11ShaderResourceView * * a, 
@@ -503,6 +601,46 @@ void MeanImagesRenderer::RenderB(ID3D11DeviceContext * context,
 								 const Texture * (*output)[], 
 								 uint8 count)
 {
+	ID3D11RenderTargetView * resultRenderTargets[4];
+
+	ID3D11ShaderResourceView * shaderResourceViews1[1];
+	shaderResourceViews1[0] = meanImage;
+	ID3D11ShaderResourceView * shaderResourceViews2[1];
+	ID3D11ShaderResourceView * shaderResourceViews3[6];
+
+	UINT stride = sizeof(VertexPosition);
+	UINT offset = 0;
+	context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+	context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->IASetInputLayout(m_inputLayout.Get());
+	context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+	context->PSSetSamplers(0, 1, m_sampler.GetAddressOf());
+	context->PSSetShader(m_pixelShader_B.Get(), nullptr, 0);
+	context->PSSetShaderResources(0, 1, shaderResourceViews1);
+
+	for (int i = 0; i < count; i += 4)
+	{
+		shaderResourceViews2[0] = meanD[i / 4];
+
+		shaderResourceViews3[0] = a[i];
+		shaderResourceViews3[1] = a[i + 1];
+		shaderResourceViews3[2] = a[i + 2];
+		shaderResourceViews3[3] = a[i + 3];
+
+		resultRenderTargets[0] = ((*output)[i] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[1] = ((*output)[i + 1] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[2] = ((*output)[i + 2] = TexturesBuffer->Alloc())->RenderTarget;
+		resultRenderTargets[3] = ((*output)[i + 3] = TexturesBuffer->Alloc())->RenderTarget;
+
+		context->OMSetRenderTargets(4, resultRenderTargets, 0);
+		context->PSSetShaderResources(1, 1, shaderResourceViews2);
+		context->PSSetShaderResources(2, 4, shaderResourceViews3);
+		context->DrawIndexed(m_indexCount, 0, 0);
+	}
+
+	context->PSSetShaderResources(1, 0, nullptr);
+	context->PSSetShaderResources(2, 0, nullptr);
 }
 
 void MeanImagesRenderer::_Render(ID3D11DeviceContext1 * context)

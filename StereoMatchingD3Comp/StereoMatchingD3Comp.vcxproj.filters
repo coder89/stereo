@@ -43,6 +43,15 @@
     <FxCompile Include="MultiplyWages_PixelShader.hlsl">
       <Filter>Renderers\Common Renderers</Filter>
     </FxCompile>
+    <FxCompile Include="A_PixelShader.hlsl">
+      <Filter>Renderers\Image Statistic Renderer</Filter>
+    </FxCompile>
+    <FxCompile Include="B_PixelShader.hlsl">
+      <Filter>Renderers\Image Statistic Renderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Q_PixelShader.hlsl">
+      <Filter>Renderers\Image Statistic Renderer</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CostVolumeRenderer.cpp">

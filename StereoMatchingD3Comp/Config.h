@@ -1,7 +1,7 @@
 #pragma once
 
 #define MAX_DISPARITY 16
-#define MAX_BUFFERS_COUNT 50
+#define MAX_BUFFERS_COUNT 80
 
 __declspec(align(16)) struct ConstantParameters
 {

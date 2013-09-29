@@ -64,9 +64,6 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET0
 
 			float tC = alpha * min(Tc, M) + (1 - alpha) * min(Tg, G);
 		
-			if (tC < 0.02f)
-				tC = 1.0f;
-
 			C[i][j] = tC;
 		}
 	}
