@@ -210,6 +210,7 @@
     <FxCompile Include="CostVolumePixelShader.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>4.0_level_9_3</ShaderModel>
+      <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">false</DisableOptimizations>
     </FxCompile>
     <FxCompile Include="Covariance_PixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>

@@ -10,5 +10,6 @@ struct PixelShaderInput
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-    return Texture.Sample(Sampler, input.tex);
+    float3 tmp = Texture.Sample(Sampler, input.tex);
+    return float4(tmp, 1.0f);
 }

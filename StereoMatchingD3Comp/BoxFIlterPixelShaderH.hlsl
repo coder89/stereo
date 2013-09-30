@@ -20,7 +20,7 @@ struct PixelShaderInput
 
 float4 main(PixelShaderInput input) : SV_TARGET
 {
-	float3 px = float3(0,0,0);
+	float4 px = float4(0,0,0,0);
 
 	for (int i = -r; i <= r; ++i)
 	{
@@ -31,6 +31,7 @@ float4 main(PixelShaderInput input) : SV_TARGET
 	px[0] /= W;
 	px[1] /= W;
 	px[2] /= W;
+	px[3] /= W;
 
-	return float4(px, 1.0f);
+	return px;
 }

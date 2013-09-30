@@ -57,10 +57,10 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET
     output.cost1[2] = output.cost1[2] / W;
     output.cost1[3] = output.cost1[3] / W;
 
-    output.cost4[0] = output.cost1[0] / W;
-    output.cost4[1] = output.cost1[1] / W;
-    output.cost4[2] = output.cost1[2] / W;
-    output.cost4[3] = output.cost1[3] / W;
+    output.cost4[0] = output.cost4[0] / W;
+    output.cost4[1] = output.cost4[1] / W;
+    output.cost4[2] = output.cost4[2] / W;
+    output.cost4[3] = output.cost4[3] / W;
 
     return output;
 }

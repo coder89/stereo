@@ -47,7 +47,7 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET
 	float e = v_GG_GB_BB[1];
 	float f = v_GG_GB_BB[2] + 0.0001f;
 
-	float M = 1 / ( -a*d*f + a*e*e + b*b*f -2*b*c*e + c*c*d );
+	float M = 1.0f / ( -a*d*f + a*e*e + b*b*f -2*b*c*e + c*c*d );
 
 	float na = M * (e*e-d*f);
 	float nb = M * (b*f-c*e);
@@ -60,7 +60,7 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET
 							  nb, nd, ne,
 							  nc, ne, nf};
 
-	float4 cov = Textures[2].Sample(Sampler, input.tex);
+	float3 cov = Textures[2].Sample(Sampler, input.tex);
 	float3 tmp = mul(cov, v);
 	output.a1[0] = tmp[0];
 	output.a1[1] = tmp[1];

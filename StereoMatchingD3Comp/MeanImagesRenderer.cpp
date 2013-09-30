@@ -9,6 +9,8 @@ using namespace Windows::Foundation;
 using namespace Windows::ApplicationModel;
 using namespace Windows::UI::Core;
 
+float clear[] = {0.0f, 0.0f, 0.0f, 0.0f};
+
 MeanImagesRenderer::MeanImagesRenderer(ID3D11Device1 * device, Windows::Foundation::Size viewportSize) :
 	AbstractProcessingStage(device, viewportSize)
 {
@@ -257,6 +259,8 @@ void MeanImagesRenderer::RenderSimple(ID3D11DeviceContext1 * context,
 
 	for (int i = 0; i < count; i += 2, incInput += 2)
 	{
+		context->ClearRenderTargetView(tmpRenderTargets[0], clear);
+		context->ClearRenderTargetView(tmpRenderTargets[1], clear);
 		context->PSSetShader(m_pixelShader_Mean_H.Get(), nullptr, 0);
 		context->OMSetRenderTargets( 2, tmpRenderTargets, 0);
 		context->PSSetShaderResources(0, 2, incInput);
@@ -265,6 +269,8 @@ void MeanImagesRenderer::RenderSimple(ID3D11DeviceContext1 * context,
 		resultRenderTargets[0] = ((*output)[i] = TexturesBuffer->Alloc())->RenderTarget;
 		resultRenderTargets[1] = ((*output)[i+1] = TexturesBuffer->Alloc())->RenderTarget;
 
+		context->ClearRenderTargetView(resultRenderTargets[0], clear);
+		context->ClearRenderTargetView(resultRenderTargets[1], clear);
 		context->PSSetShader(m_pixelShader_Mean_W.Get(), nullptr, 0);
 		context->OMSetRenderTargets(2, resultRenderTargets, 0);
 		context->PSSetShaderResources(0, 2, tmpResourceView);
@@ -337,8 +343,12 @@ void MeanImagesRenderer::RenderMultiplied(ID3D11DeviceContext1 * context,
 
 	for (int i = 0; i < count; ++i)
 	{
-		context->PSSetShader(m_pixelShader_MultiplyWages.Get(), nullptr, 0);
+		context->ClearRenderTargetView(tmpRenderTargets1[0], clear);
+		context->ClearRenderTargetView(tmpRenderTargets1[1], clear);
+		context->ClearRenderTargetView(tmpRenderTargets1[2], clear);
+		context->ClearRenderTargetView(tmpRenderTargets1[3], clear);
 		context->OMSetRenderTargets(4, tmpRenderTargets1, 0);
+		context->PSSetShader(m_pixelShader_MultiplyWages.Get(), nullptr, 0);
 		context->PSSetShaderResources(0, 1, &image);
 		context->PSSetShaderResources(1, 1, wages+i);
 		context->DrawIndexed(m_indexCount, 0, 0);
@@ -346,16 +356,20 @@ void MeanImagesRenderer::RenderMultiplied(ID3D11DeviceContext1 * context,
 
 		for (int j = 0; j < 4; j+=2)
 		{
-			context->PSSetShader(m_pixelShader_Mean_H.Get(), nullptr, 0);
+			context->ClearRenderTargetView(tmpRenderTargets2[0], clear);
+			context->ClearRenderTargetView(tmpRenderTargets2[1], clear);
 			context->OMSetRenderTargets(2, tmpRenderTargets2, 0);
+			context->PSSetShader(m_pixelShader_Mean_H.Get(), nullptr, 0);
 			context->PSSetShaderResources(0, 2, tmpResourceView1 + j);
 			context->DrawIndexed(m_indexCount, 0, 0);
 
 			resultRenderTargets[0] = ((*output)[i*4 + j] = TexturesBuffer->Alloc())->RenderTarget;
 			resultRenderTargets[1] = ((*output)[i*4 + j + 1] = TexturesBuffer->Alloc())->RenderTarget;
 
-			context->PSSetShader(m_pixelShader_Mean_W.Get(), nullptr, 0);
+			context->ClearRenderTargetView(resultRenderTargets[0], clear);
+			context->ClearRenderTargetView(resultRenderTargets[1], clear);
 			context->OMSetRenderTargets(2, resultRenderTargets, 0);
+			context->PSSetShader(m_pixelShader_Mean_W.Get(), nullptr, 0);
 			context->PSSetShaderResources(0, 2, tmpResourceView2);
 			context->DrawIndexed(m_indexCount, 0, 0);
 		}
@@ -457,20 +471,28 @@ void MeanImagesRenderer::RenderVariance(ID3D11DeviceContext1* context,
 	ID3D11ShaderResourceView * * incInput = images;
 	for (int i = 0; i < count; i += 2, incInput += 2)
 	{
-		context->PSSetShader(m_pixelShader_MixChannels.Get(), nullptr, 0);
+		context->ClearRenderTargetView(mixChannelsRenderTarget[0], clear);
+		context->ClearRenderTargetView(mixChannelsRenderTarget[1], clear);
+		context->ClearRenderTargetView(mixChannelsRenderTarget[2], clear);
+		context->ClearRenderTargetView(mixChannelsRenderTarget[3], clear);
 		context->OMSetRenderTargets(4, mixChannelsRenderTarget, 0);
+		context->PSSetShader(m_pixelShader_MixChannels.Get(), nullptr, 0);
 		context->PSSetShaderResources(0, 2, incInput);
 		context->DrawIndexed(m_indexCount, 0, 0);
 
 		for (int j = 0; j < 4; j += 2)
 		{
-			context->PSSetShader(m_pixelShader_Mean_H.Get(), nullptr, 0);
+			context->ClearRenderTargetView(tmpBoxHRenderTarget[0], clear);
+			context->ClearRenderTargetView(tmpBoxHRenderTarget[1], clear);
 			context->OMSetRenderTargets(2, tmpBoxHRenderTarget, 0);
+			context->PSSetShader(m_pixelShader_Mean_H.Get(), nullptr, 0);
 			context->PSSetShaderResources(0, 2, mixChannelsResourceView + j);
 			context->DrawIndexed(m_indexCount, 0, 0);
 
-			context->PSSetShader(m_pixelShader_Mean_W.Get(), nullptr, 0);
+			context->ClearRenderTargetView(tmpBoxRenderTarget[j], clear);
+			context->ClearRenderTargetView(tmpBoxRenderTarget[j + 1], clear);
 			context->OMSetRenderTargets(2, tmpBoxRenderTarget + j, 0);
+			context->PSSetShader(m_pixelShader_Mean_W.Get(), nullptr, 0);
 			context->PSSetShaderResources(0, 2, tmpBoxHResourceView);
 			context->DrawIndexed(m_indexCount, 0, 0);
 		}
@@ -480,8 +502,12 @@ void MeanImagesRenderer::RenderVariance(ID3D11DeviceContext1* context,
 		resultRenderTargets[2] = ((*output)[i*2 + 2] = TexturesBuffer->Alloc())->RenderTarget;
 		resultRenderTargets[3] = ((*output)[i*2 + 3] = TexturesBuffer->Alloc())->RenderTarget;
 
-		context->PSSetShader(m_pixelShader_Variance.Get(), nullptr, 0);
+		context->ClearRenderTargetView(resultRenderTargets[0], clear);
+		context->ClearRenderTargetView(resultRenderTargets[1], clear);
+		context->ClearRenderTargetView(resultRenderTargets[2], clear);
+		context->ClearRenderTargetView(resultRenderTargets[3], clear);
 		context->OMSetRenderTargets(4, resultRenderTargets, 0);
+		context->PSSetShader(m_pixelShader_Variance.Get(), nullptr, 0);
 		context->PSSetShaderResources(0, 6, tmpBoxResourceView);
 		context->DrawIndexed(m_indexCount, 0, 0);
 	}
@@ -544,8 +570,12 @@ void MeanImagesRenderer::RenderCovariance(ID3D11DeviceContext1 * context,
 		resultRenderTargets[2] = ((*output)[i + 2] = TexturesBuffer->Alloc())->RenderTarget;
 		resultRenderTargets[3] = ((*output)[i + 3] = TexturesBuffer->Alloc())->RenderTarget;
 
-		context->PSSetShader(m_pixelShader_Covariance.Get(), nullptr, 0);
+		context->ClearRenderTargetView(resultRenderTargets[0], clear);
+		context->ClearRenderTargetView(resultRenderTargets[1], clear);
+		context->ClearRenderTargetView(resultRenderTargets[2], clear);
+		context->ClearRenderTargetView(resultRenderTargets[3], clear);
 		context->OMSetRenderTargets(4, resultRenderTargets, 0);
+		context->PSSetShader(m_pixelShader_Covariance.Get(), nullptr, 0);
 		context->PSSetShaderResources(0, 6, incInput);
 		context->DrawIndexed(m_indexCount, 0, 0);
 	}
@@ -573,20 +603,18 @@ void MeanImagesRenderer::RenderQ(ID3D11DeviceContext * context,
 	context->PSSetSamplers(0, 1, m_sampler.GetAddressOf());
 	context->PSSetShader(m_pixelShader_Q.Get(), nullptr, 0);
 
-	for (int i = 0; i < count; i += 4)
+	for (int i = 0; i < count; ++i)
 	{
-		shaderResourceViews[1] = meanA[i];
-		shaderResourceViews[2] = meanA[i + 1];
-		shaderResourceViews[3] = meanA[i + 2];
-		shaderResourceViews[4] = meanA[i + 3];
-		shaderResourceViews[5] = meanB[i / 4];
+		shaderResourceViews[1] = meanA[i*4];
+		shaderResourceViews[2] = meanA[i*4 + 1];
+		shaderResourceViews[3] = meanA[i*4 + 2];
+		shaderResourceViews[4] = meanA[i*4 + 3];
+		shaderResourceViews[5] = meanB[i];
 
 		resultRenderTargets[0] = ((*output)[i] = TexturesBuffer->Alloc())->RenderTarget;
-		resultRenderTargets[1] = ((*output)[i + 1] = TexturesBuffer->Alloc())->RenderTarget;
-		resultRenderTargets[2] = ((*output)[i + 2] = TexturesBuffer->Alloc())->RenderTarget;
-		resultRenderTargets[3] = ((*output)[i + 3] = TexturesBuffer->Alloc())->RenderTarget;
 
-		context->OMSetRenderTargets(4, resultRenderTargets, 0);
+		context->ClearRenderTargetView(resultRenderTargets[0], clear);
+		context->OMSetRenderTargets(1, resultRenderTargets, 0);
 		context->PSSetShaderResources(0, 6, shaderResourceViews);
 		context->DrawIndexed(m_indexCount, 0, 0);
 	}
@@ -635,6 +663,10 @@ void MeanImagesRenderer::RenderA(ID3D11DeviceContext * context,
 		resultRenderTargets[2] = ((*output)[i + 2] = TexturesBuffer->Alloc())->RenderTarget;
 		resultRenderTargets[3] = ((*output)[i + 3] = TexturesBuffer->Alloc())->RenderTarget;
 
+		context->ClearRenderTargetView(resultRenderTargets[0], clear);
+		context->ClearRenderTargetView(resultRenderTargets[1], clear);
+		context->ClearRenderTargetView(resultRenderTargets[2], clear);
+		context->ClearRenderTargetView(resultRenderTargets[3], clear);
 		context->OMSetRenderTargets(4, resultRenderTargets, 0);
 		context->PSSetShaderResources(0, 6, shaderResourceViews);
 		context->DrawIndexed(m_indexCount, 0, 0);
@@ -688,6 +720,8 @@ void MeanImagesRenderer::RenderB(ID3D11DeviceContext * context,
 		resultRenderTargets[0] = ((*output)[i/4] = TexturesBuffer->Alloc())->RenderTarget;
 		resultRenderTargets[1] = ((*output)[i/4 + 1] = TexturesBuffer->Alloc())->RenderTarget;
 
+		context->ClearRenderTargetView(resultRenderTargets[0], clear);
+		context->ClearRenderTargetView(resultRenderTargets[1], clear);
 		context->OMSetRenderTargets(2, resultRenderTargets, 0);
 		context->PSSetShaderResources(0, 11, shaderResourceViews);
 		context->DrawIndexed(m_indexCount, 0, 0);

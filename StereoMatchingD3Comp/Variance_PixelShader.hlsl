@@ -47,8 +47,5 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET
 	output.variance2_GG_GB_BB[1] = mixedBox[1] - mean[1] * mean[2];
 	output.variance2_GG_GB_BB[2] = mixedBox[2] - mean[2] * mean[2];
 
-	if (output.variance1_RR_RG_RB[0] < 0.1f)
-		output.variance1_RR_RG_RB[0] = 1.0f;
-
 	return output;
 }

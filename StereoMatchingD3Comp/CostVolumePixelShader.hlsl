@@ -60,7 +60,7 @@ PixelShaderOutput main(PixelShaderInput input) : SV_TARGET0
 
 			float M = abs(
 				px1_left[0] + px1_left[1] + px1_left[2] - px1_right[0] - px1_right[1] - px1_right[2]
-			);
+			) / 3.0f;
 
 			float tC = alpha * min(Tc, M) + (1 - alpha) * min(Tg, G);
 		
