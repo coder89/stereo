@@ -1,0 +1,20 @@
+<!-- saved from url=(0014)about:internet -->
+<pre class="code">
+<span class="srcline"><span class="lineno"><a href="1,1" id="srcline1"> 1</a></span><span class="line"><span class="keyword">function</span> [ <span class="var type0" id="S2T0U3">result</span> ] = <span class="message error" id="M1F1C">cost_volume</span>( <span class="var type0" id="S3T0U6">I_left</span>, <span class="var type0" id="S4T0U7">I_right</span>, <span class="var type0" id="S5T0U8">G_left</span>, <span class="var type0" id="S6T0U9">G_right</span>, <span class="var type0" id="S7T0U10">disparity</span>, <span class="var type0" id="S8T0U11">alpha</span>, <span class="var type0" id="S9T0U12">T_c</span>, <span class="var type0" id="S10T0U13">T_g</span> )</span></span>
+<span class="srcline"><span class="lineno"><a href="1,2" id="srcline2"> 2</a></span><span class="line"><span class="comment">%#codegen</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,3" id="srcline3"> 3</a></span><span class="line"></span></span>
+<span class="srcline"><span class="lineno"><a href="1,4" id="srcline4"> 4</a></span><span class="line">    <span class="comment">% Calculate gradient:</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,5" id="srcline5"> 5</a></span><span class="line">    <span class="var type0" id="S6T0U16">G_right</span> = imshift(<span class="var type0" id="S6T0U19">G_right</span>, <span class="var type0" id="S7T0U20">disparity</span>);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,6" id="srcline6"> 6</a></span><span class="line">    </span></span>
+<span class="srcline"><span class="lineno"><a href="1,7" id="srcline7"> 7</a></span><span class="line">    <span class="comment">% G matrix</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,8" id="srcline8"> 8</a></span><span class="line">    <span class="var type0" id="S12T0U23">aG</span> = sqrt(sum((<span class="var type0" id="S5T0U31">G_left</span> - <span class="var type0" id="S6T0U32">G_right</span>) .^ 2, 3));</span></span>
+<span class="srcline"><span class="lineno"><a href="1,9" id="srcline9"> 9</a></span><span class="line">    </span></span>
+<span class="srcline"><span class="lineno"><a href="1,10" id="srcline10">10</a></span><span class="line">    <span class="comment">% M matrix</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,11" id="srcline11">11</a></span><span class="line">    <span class="var type0" id="S15T0U37">aM</span> = sum(abs(<span class="var type0" id="S3T0U43">I_left</span> - imshift(<span class="var type0" id="S4T0U46">I_right</span>, <span class="var type0" id="S7T0U47">disparity</span>)), 3);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,12" id="srcline12">12</a></span><span class="line">    </span></span>
+<span class="srcline"><span class="lineno"><a href="1,13" id="srcline13">13</a></span><span class="line">    <span class="comment">% result</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,14" id="srcline14">14</a></span><span class="line">    <span class="var type0" id="S2T0U51">result</span> = <span class="var type0" id="S8T0U54">alpha</span> * min(<span class="var type0" id="S9T0U57">T_c</span>, <span class="var type0" id="S15T0U58">aM</span>) + (1 - <span class="var type0" id="S8T0U63">alpha</span>) * min(<span class="var type0" id="S10T0U66">T_g</span>, <span class="var type0" id="S12T0U67">aG</span>);</span></span>
+<span class="srcline"><span class="lineno"><a href="1,15" id="srcline15">15</a></span><span class="line">    </span></span>
+<span class="srcline"><span class="lineno"><a href="1,16" id="srcline16">16</a></span><span class="line"><span class="keyword">end</span></span></span>
+<span class="srcline"><span class="lineno"><a href="1,17" id="srcline17">17</a></span><span class="line"></span></span>
+</pre>

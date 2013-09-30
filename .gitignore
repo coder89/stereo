@@ -11,3 +11,11 @@
 *.lai
 *.la
 *.a
+bin/
+obj/
+Bin/
+Obj/
+ARM/
+PerfLogs/
+*.sap
+

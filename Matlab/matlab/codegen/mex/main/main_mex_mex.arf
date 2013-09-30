@@ -1,0 +1,9 @@
+libemlrt.lib
+libut.lib
+libmwblas.lib
+libmwmathutil.lib
+/export:mexFunction
+/export:emlrtMexFcnProperties
+/export:main
+/export:main_initialize
+/export:main_terminate
