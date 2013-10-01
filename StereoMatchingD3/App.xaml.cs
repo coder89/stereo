@@ -55,6 +55,7 @@ namespace StereoMatchingD3
                 PhoneApplicationService.Current.UserIdleDetectionMode = IdleDetectionMode.Disabled;
             }
 
+            Application.Current.Host.Settings.EnableFrameRateCounter = true;
             PhoneApplicationService.Current.UserIdleDetectionMode = IdleDetectionMode.Disabled;
         }
 

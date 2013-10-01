@@ -34,6 +34,9 @@ public:
 private:
 	void Render(ID3D11ShaderResourceView * * resource);
 
+	void GPUBlur();
+	void CPUBlur();
+	
 	bool m_loadingComplete;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> m_sampler;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_texture1;
@@ -47,10 +50,29 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantBuffer;
 
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Mean_H;
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader_Mean_W;
+
 	CostVolumeRenderer * m_costVolumeRenderer;
 	MeanImagesRenderer * m_meanImagesRenderer;
 	
 	uint32 m_indexCount;
+
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_GPU1_Texture_W;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_GPU2_Texture_W;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_GPU1_Texture_H;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_GPU2_Texture_H;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_GPU1_Texture_W_shaderView;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_GPU2_Texture_W_shaderView;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_GPU1_Texture_H_shaderView;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_GPU2_Texture_H_shaderView;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_GPU1_Texture_W_target;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_GPU2_Texture_W_target;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_GPU1_Texture_H_target;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_GPU2_Texture_H_target;
+
+
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_constantParameterBuffer;
 	bool m_sameImage;
